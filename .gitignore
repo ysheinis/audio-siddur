@@ -34,6 +34,7 @@ ENV/
 # Audio output files
 output/
 temp_sentences/
+chunk_cache/
 
 # Google Cloud credentials (IMPORTANT: Keep this private!)
 *.json

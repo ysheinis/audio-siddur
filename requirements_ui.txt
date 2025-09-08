@@ -1,0 +1,9 @@
+# UI Dependencies for Hebrew Audio Siddur
+# Core dependencies (already in requirements.txt)
+google-cloud-texttospeech>=2.16.0
+pydub>=0.25.1
+pyluach>=2.2.0
+
+# UI Dependencies
+# tkinter is included with Python, no additional package needed
+# For audio playback, we use system default players

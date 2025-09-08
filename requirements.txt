@@ -1,0 +1,12 @@
+# Hebrew Audio Siddur Dependencies
+
+# Google Cloud Text-to-Speech
+google-cloud-texttospeech
+
+# Audio processing
+pydub
+
+# Hebrew calendar (REQUIRED for accurate date calculations)
+pyluach
+
+# Note: Install with: pip install -r requirements.txt

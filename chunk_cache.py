@@ -5,6 +5,7 @@ Handles caching of TTS-generated audio chunks to avoid redundant API calls.
 
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
 
 
@@ -49,13 +50,25 @@ class ChunkCache:
         directory = self.load_directory()
         directory[chunk_name] = {
             'checksum': text_checksum,
-            'timestamp': str(Path().cwd())  # Simple timestamp placeholder
+            'timestamp': datetime.now().isoformat()
         }
         self.save_directory(directory)
     
     def get_cached_path(self, chunk_name: str) -> Path:
         """Get the path to a cached chunk file."""
         return self.cache_dir / f"{chunk_name}.mp3"
+    
+    def clear_cache(self):
+        """Clear all cached chunks and directory."""
+        # Remove all MP3 files
+        for mp3_file in self.cache_dir.glob("*.mp3"):
+            mp3_file.unlink()
+        
+        # Clear directory file
+        if self.directory_file.exists():
+            self.directory_file.unlink()
+        
+        print("🗑️ Chunk cache cleared")
     
     def show_stats(self):
         """Display cache statistics."""

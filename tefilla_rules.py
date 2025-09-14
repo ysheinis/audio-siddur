@@ -5,7 +5,7 @@ Handles conditional logic for building prayer services based on Hebrew calendar 
 
 from dataclasses import dataclass
 from typing import List, Dict, Set, Optional, Any
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pathlib import Path
 import hashlib
 import json
@@ -73,7 +73,6 @@ class HebrewCalendar:
         if tefilla_type == 'maariv':
             hebrew_date = hebrew_date + 1
         
-        
         # Check if it's Shabbat (Hebrew calendar weekday 7)
         day_of_week = 'shabbat' if hebrew_date.weekday() == 7 else 'weekday'
         
@@ -97,13 +96,13 @@ class HebrewCalendar:
         
         # Calculate Halachic prayer variations (outside Israel)
         mashiv_haruach = self._is_mashiv_haruach_period(hebrew_date, tefilla_type)
-        veten_tal_umattar = self._is_veten_tal_umattar_period(target_date)
+        veten_tal_umattar = self._is_veten_tal_umattar_period(target_date, tefilla_type)
         
         # Calculate Hallel type
-        hallel_type = self._calculate_hallel_type(hebrew_date, holiday, rosh_chodesh, sefirat_haomer)
+        hallel_type = self._calculate_hallel_type(hebrew_date, holiday, rosh_chodesh)
         
         # Calculate full Shmone Esre flag
-        full_shmoneh_esreh = self._calculate_full_shmoneh_esreh(day_of_week, holiday)
+        full_shmoneh_esreh = self._calculate_full_shmoneh_esreh(day_of_week, holiday, chol_hamoed)
         
         return DateConditions(
             day_of_week=day_of_week,
@@ -135,8 +134,8 @@ class HebrewCalendar:
                 return 'sukkot'
             elif day in [22, 23]:
                 return 'shmini_atzeret'
-        # Pesach (15-21 Nisan) - month number varies by leap year
-        elif month_name == 'Nisan' and day in [15, 16, 17, 18, 19, 20, 21]:
+        # Pesach (14-21 Nissan) - month number varies by leap year
+        elif month_name == 'Nissan' and day in [15, 16, 17, 18, 19, 20, 21, 22]:
             return 'pesach'
         # Shavuot (6-7 Sivan) - month number varies by leap year  
         elif month_name == 'Sivan' and day in [6, 7]:
@@ -144,8 +143,8 @@ class HebrewCalendar:
         elif month_name == 'Kislev':
             if day in [25, 26, 27, 28, 29, 30]:
                 return 'chanukkah'
-        elif month_name == 'Tevet':
-            if day in [1, 2, 3]:
+        elif month_name == 'Teves':
+            if day in [1, 2]:
                 return 'chanukkah'
         # Purim (14 Adar)
         # In regular years: Adar (month 6)
@@ -185,11 +184,11 @@ class HebrewCalendar:
         month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
-        # Chol Hamoed Sukkot (Tishrei 16-20)
-        if month_name == 'Tishrei' and 16 <= day <= 20:
+        # Chol Hamoed Sukkot (Tishrei 17-21)
+        if month_name == 'Tishrei' and 17 <= day <= 21:
             return True
-        # Chol Hamoed Pesach (Nisan 16-20)
-        elif month_name == 'Nisan' and 16 <= day <= 20:
+        # Chol Hamoed Pesach (Nissan 17-20)
+        elif month_name == 'Nissan' and 17 <= day <= 20:
             return True
         
         return False
@@ -201,7 +200,7 @@ class HebrewCalendar:
         
         # Major fast days
         fast_days = [
-            ('Tevet', 10),   # 10 Tevet
+            ('Teves', 10),   # 10 Teves
             ('Av', 9),       # 9 Av
             ('Tammuz', 17),  # 17 Tammuz
             ('Tishrei', 3),  # 3 Tishrei (Tzom Gedaliah)
@@ -233,14 +232,14 @@ class HebrewCalendar:
         month = hebrew_date.month
         day = hebrew_date.day
         
-        # Sefirat HaOmer starts on 16 Nisan (second day of Pesach)
+        # Sefirat HaOmer starts on 16 Nissan (second day of Pesach)
         # and ends on 5 Sivan (day before Shavuot)
         
-        # Check if we're in Nisan
-        if hebrew_date.month_name() == 'Nisan':
-            # Omer starts on 16 Nisan
+        # Check if we're in Nissan
+        if hebrew_date.month_name() == 'Nissan':
+            # Omer starts on 16 Nissan
             if day >= 16:
-                return day - 15  # Day 16 Nisan = Omer day 1
+                return day - 15  # Day 16 Nissan = Omer day 1
         
         # Check if we're in Iyar (full month is in Omer)
         elif hebrew_date.month_name() == 'Iyar':
@@ -259,47 +258,44 @@ class HebrewCalendar:
     def _is_mashiv_haruach_period(self, hebrew_date, tefilla_type: str = None) -> bool:
         """
         Determine if we should say Mashiv HaRuach (outside Israel).
-        From Maariv of Shemini Atzeret (22 Tishrei) until Shacharit of first day of Pesach (15 Nisan).
+        From Maariv of Shemini Atzeret (22 Tishrei) until Shacharit of first day of Pesach (15 Nissan).
         """
         month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
-        # From 22 Tishrei (Shemini Atzeret) through end of year
-        if month_name == 'Tishrei' and day >= 22:  # Tishrei 22 onwards
-            # For Maariv on Shemini Atzeret (22 Tishrei), start saying Mashiv HaRuach
-            if day == 22 and tefilla_type == 'maariv':
-                return True
-            # For all other tefillos on 22 Tishrei and later, say Mashiv HaRuach
-            elif day > 22:
-                return True
         
-        # All of winter months: Cheshvan, Kislev, Tevet, Shevat, Adar
-        if month_name in ['Cheshvan', 'Kislev', 'Tevet', 'Shevat', 'Adar', 'Adar 2']:
+        if month_name == 'Tishrei' and day >= 23:  # Tishrei 23 onwards - after Shemini Atzeret Musaf
             return True
         
-        # On 15 Nisan (first day of Pesach)
-        if month_name == 'Nisan' and day == 15:
-            # Stop saying Mashiv HaRuach from Shacharit of Pesach onwards
-            if tefilla_type in ['shacharis', 'mincha']:
-                return False
-            # Maariv on Pesach still says Mashiv HaRuach (it's the previous day's Maariv)
-            elif tefilla_type == 'maariv':
+        # All of winter months: Cheshvan, Kislev, Teves, Shevat, Adar
+        if month_name in ['Cheshvan', 'Kislev', 'Teves', 'Shevat', 'Adar', 'Adar 1', 'Adar 2']:
+            return True
+        
+        if month_name == 'Nissan' and day == 15:
+            # on Pesach still says Mashiv HaRuach until Musaf
+            if tefilla_type in ['maariv', 'shacharis']:
                 return True
         
-        # Until 14 Nisan (day before Pesach)
-        if month_name == 'Nisan' and day <= 14:  # Nisan 1-14
+        # Until 14 Nissan (day before Pesach)
+        if month_name == 'Nissan' and day <= 14:  # Nissan 1-14
             return True
         
         return False
     
-    def _is_veten_tal_umattar_period(self, gregorian_date: date) -> bool:
+    def _is_veten_tal_umattar_period(self, gregorian_date: date, tefilla_type: str = None) -> bool:
         """
         Determine if we should say VeTen Tal UMattar (outside Israel).
         Start: at Ma'ariv on December 4 most years.
         If the upcoming Gregorian year is a leap year, start at Ma'ariv on December 5.
         End: until Pesach.
         """
+        
         year = gregorian_date.year
+        
+        # For dates before December, we're in the period that started in the previous December
+        # For dates in December, we're starting a new period
+        if gregorian_date.month < 12:
+            year -= 1
         
         # Check if the upcoming year (when we'll be saying the prayer) is a leap year
         upcoming_year = year + 1
@@ -309,18 +305,30 @@ class HebrewCalendar:
         start_day = 5 if is_leap_year else 4
         veten_tal_start = date(year, 12, start_day)
         
-        # Get Pesach date for this Hebrew year
+        # Get Pesach date for the upcoming Hebrew year
+        # If we're in December, we're looking for Pesach of the next Hebrew year
         hebrew_date = dates.HebrewDate.from_pydate(gregorian_date)
         hebrew_year = hebrew_date.year
         
-        # Pesach is always 15 Nisan
-        pesach_hebrew = dates.HebrewDate(hebrew_year, 7, 15)  # 15 Nisan
+        # If we're in December, we need Pesach of the next Hebrew year
+        if gregorian_date.month == 12:
+            hebrew_year += 1
+        
+        # Pesach is always 15 Nissan (Nissan is month 1)
+        pesach_hebrew = dates.HebrewDate(hebrew_year, 1, 15)  # 15 Nissan
         pesach_gregorian = pesach_hebrew.to_pydate()
         
         # VeTen Tal UMattar period: from December 4/5 until Pesach
-        return veten_tal_start <= gregorian_date < pesach_gregorian
+        # On the start date, start saying at Maariv
+        if tefilla_type == 'maariv' and gregorian_date == veten_tal_start:
+            return True
+        # On the end day, only say at Shacharit
+        if tefilla_type == 'shacharis' and gregorian_date == pesach_gregorian:
+            return True
+        
+        return veten_tal_start < gregorian_date < pesach_gregorian
     
-    def _calculate_hallel_type(self, hebrew_date, holiday: Optional[str], rosh_chodesh: bool, sefirat_haomer: int) -> str:
+    def _calculate_hallel_type(self, hebrew_date, holiday: Optional[str], rosh_chodesh: bool) -> str:
         """Calculate the type of Hallel to be recited.
         
         Returns:
@@ -328,26 +336,25 @@ class HebrewCalendar:
             "partial": Partial Hallel (Rosh Chodesh, Chol Hamoed)
             "none": No Hallel (regular weekdays, most of Omer period)
         """
-        # Full Hallel on major holidays
-        if holiday in ['pesach', 'shavuot', 'sukkot', 'chanukkah']:
+        # Full Hallel on major holidays (except Pesach which has special rules)
+        if holiday in ['shavuot', 'sukkot', 'chanukkah', 'rosh_hashana', 'yom_kippur', 'shmini_atzeret']:
             return "full"
         
-        # Partial Hallel on Rosh Chodesh and Chol Hamoed
-        if rosh_chodesh or (holiday and 'chol_hamoed' in str(holiday)):
+        # Pesach: Full Hallel for first 2 days, partial for remaining days
+        if holiday == 'pesach':
+            # Check if it's Nissan 15-16 (first 2 days) or Nissan 17-22 (remaining days)
+            if hebrew_date.month_name() == 'Nissan' and hebrew_date.day in [15, 16]:
+                return "full"     # First 2 days of Pesach
+            else:
+                return "partial"  # Remaining days of Pesach (Nissan 17-22)
+        
+        # Partial Hallel on Rosh Chodesh
+        if rosh_chodesh:
             return "partial"
-        
-        # No Hallel during most of Sefirat HaOmer (except last days)
-        if sefirat_haomer > 0 and sefirat_haomer < 33:
-            return "none"
-        
-        # Full Hallel on last days of Omer (Lag BaOmer onwards)
-        if sefirat_haomer >= 33:
-            return "full"
-        
         # Default: no Hallel
         return "none"
     
-    def _calculate_full_shmoneh_esreh(self, day_of_week: str, holiday: Optional[str]) -> bool:
+    def _calculate_full_shmoneh_esreh(self, day_of_week: str, holiday: Optional[str], chol_hamoed: bool) -> bool:
         """
         Calculate if we need full Shmone Esre (weekday middle brochos).
         
@@ -356,11 +363,15 @@ class HebrewCalendar:
         - pesach, shavuot, sukkot, rosh_hashana, yom_kippur, shmini_atzeret
         
         Minor holidays that still need full Shmone Esre:
-        - chanukkah, purim, rosh_chodesh, chol_hamoed, fast_days
+        - chanukkah, purim, rosh_chodesh, chol_hamoed
         """
         # Only weekdays can have full Shmone Esre
         if day_of_week != 'weekday':
             return False
+        
+        # Chol Hamoed always uses full Shmone Esre (it's a minor holiday)
+        if chol_hamoed:
+            return True
         
         # Major holidays that need different middle brochos
         major_holidays = ['pesach', 'shavuot', 'sukkot', 'rosh_hashana', 'yom_kippur', 'shmini_atzeret']

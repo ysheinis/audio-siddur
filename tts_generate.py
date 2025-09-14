@@ -25,13 +25,25 @@ tefilla_builder = TefillaBuilder(chunk_processor)
 
 # --- MAIN PROCESSING ---
 
-def ensure_all_chunks_processed():
-    """Ensure all chunks from TEXT_MAP are processed and cached."""
-    print("🔧 Processing all prayer chunks...")
+def ensure_all_chunks_processed(chunks_count: int = None):
+    """Ensure chunks from TEXT_MAP are processed and cached."""
+    if chunks_count is None:
+        print("🔧 Processing all prayer chunks...")
+        total_chunks = len(TEXT_MAP)
+    else:
+        print(f"🔧 Processing first {chunks_count} prayer chunks...")
+        total_chunks = min(chunks_count, len(TEXT_MAP))
+    
+    processed_count = 0
     for key, chunk_data in TEXT_MAP.items():
+        if chunks_count is not None and processed_count >= chunks_count:
+            break
+            
         text = chunk_data["text"]
         chunk_processor.process_chunk(key, text)
-    print("✅ All chunks processed")
+        processed_count += 1
+    
+    print(f"✅ {processed_count} chunks processed")
 
 def build_tefilla_for_date(tefilla_type: str, target_date: date = None, force_rebuild: bool = False) -> Path:
     """Build a specific tefilla for a given date."""
@@ -99,12 +111,18 @@ def main():
                        help="Force rebuild even if cached version exists")
     parser.add_argument("--process-all", action="store_true",
                        help="Process all chunks and show cache stats")
+    parser.add_argument("--process-chunks", action="store_true",
+                       help="Process chunks (all chunks by default, or limited number with --chunks-count)")
+    parser.add_argument("--chunks-count", type=int,
+                       help="Number of chunks to process (used with --process-chunks, default: all chunks)")
     parser.add_argument("--list-tefillos", action="store_true",
                        help="List available tefilla types")
     parser.add_argument("--cache-stats", action="store_true",
                        help="Show cache statistics")
     parser.add_argument("--clear-cache", action="store_true",
                        help="Clear all cached tefillos")
+    parser.add_argument("--clear-chunk-cache", action="store_true",
+                       help="Clear all cached audio chunks")
     parser.add_argument("--show-calendar", action="store_true",
                        help="Show Hebrew calendar information for the target date")
     
@@ -130,6 +148,10 @@ def main():
         tefilla_builder.clear_cache()
         return
     
+    if args.clear_chunk_cache:
+        chunk_processor.chunk_cache.clear_cache()
+        return
+    
     # Determine target date
     target_date = date.today()
     if args.date:
@@ -144,11 +166,13 @@ def main():
         show_hebrew_calendar_info(target_date, tefilla_type)
         return
     
-    # Process all chunks if requested
-    if args.process_all:
-        ensure_all_chunks_processed()
+    # Process chunks if requested
+    if args.process_all or args.process_chunks:
+        chunks_count = args.chunks_count if args.process_chunks else None
+        ensure_all_chunks_processed(chunks_count)
         chunk_processor.chunk_cache.show_stats()
-        tefilla_builder.show_cache_stats()
+        if args.process_all:
+            tefilla_builder.show_cache_stats()
         return
 
     # Determine tefilla type

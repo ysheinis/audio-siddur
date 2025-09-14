@@ -46,6 +46,7 @@ class DateConditions:
     veten_tal_umattar: bool = False  # "Give dew and rain" - from December 4/5 to Pesach
     # Derived conditions for complex logic
     hallel_type: str = "none"  # "none", "partial", "full"
+    full_shmoneh_esreh: bool = False  # True for weekdays that need full Shmone Esre (excludes major holidays)
 
 
 class HebrewCalendar:
@@ -101,6 +102,9 @@ class HebrewCalendar:
         # Calculate Hallel type
         hallel_type = self._calculate_hallel_type(hebrew_date, holiday, rosh_chodesh, sefirat_haomer)
         
+        # Calculate full Shmone Esre flag
+        full_shmoneh_esreh = self._calculate_full_shmoneh_esreh(day_of_week, holiday)
+        
         return DateConditions(
             day_of_week=day_of_week,
             holiday=holiday,
@@ -111,43 +115,42 @@ class HebrewCalendar:
             sefirat_haomer=sefirat_haomer,
             mashiv_haruach=mashiv_haruach,
             veten_tal_umattar=veten_tal_umattar,
-            hallel_type=hallel_type
+            hallel_type=hallel_type,
+            full_shmoneh_esreh=full_shmoneh_esreh
         )
     
     
     def _get_holiday_from_hebrew_date(self, hebrew_date) -> Optional[str]:
         """Get holiday from Hebrew date using pyluach."""
-        month = hebrew_date.month
+        month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
         # Major holidays
-        if month == 1:  # Tishrei
+        if month_name == 'Tishrei':
             if day in [1, 2]:
                 return 'rosh_hashana'
             elif day == 10:
                 return 'yom_kippur'
             elif day in [15, 16, 17, 18, 19, 20, 21]:
                 return 'sukkot'
-            elif day == 22:
+            elif day in [22, 23]:
                 return 'shmini_atzeret'
-            elif day == 23:
-                return 'simchat_torah'
         # Pesach (15-21 Nisan) - month number varies by leap year
-        if hebrew_date.month_name() == 'Nisan' and day in [15, 16, 17, 18, 19, 20, 21]:
+        elif month_name == 'Nisan' and day in [15, 16, 17, 18, 19, 20, 21]:
             return 'pesach'
         # Shavuot (6-7 Sivan) - month number varies by leap year  
-        elif hebrew_date.month_name() == 'Sivan' and day in [6, 7]:
+        elif month_name == 'Sivan' and day in [6, 7]:
             return 'shavuot'
-        elif month == 3:  # Kislev
+        elif month_name == 'Kislev':
             if day in [25, 26, 27, 28, 29, 30]:
                 return 'chanukkah'
-        elif month == 4:  # Tevet
+        elif month_name == 'Tevet':
             if day in [1, 2, 3]:
                 return 'chanukkah'
         # Purim (14 Adar)
         # In regular years: Adar (month 6)
         # In leap years: Adar 2 (month 7), not Adar I (month 6)
-        if hebrew_date.month_name() in ['Adar', 'Adar 2'] and day == 14:
+        elif month_name in ['Adar', 'Adar 2'] and day == 14:
             return 'purim'
         
         return None
@@ -165,52 +168,57 @@ class HebrewCalendar:
         
         # Check if this month has 30 days, and if so, the 30th is also Rosh Chodesh
         if hebrew_date.day == 30:
-            # Get the number of days in this Hebrew month
-            days_in_month = hebrew_date.days_in_month()
-            if days_in_month == 30:
+            # Get the number of days in this Hebrew month by trying to create day 30
+            try:
+                # Try to create day 30 of this month
+                test_date = hebrew_date.replace(day=30)
+                # If we can create it, this month has 30 days
                 return True
+            except ValueError:
+                # If we can't create day 30, this month has 29 days
+                return False
         
         return False
     
     def _is_chol_hamoed_hebrew(self, hebrew_date) -> bool:
         """Check if Hebrew date is Chol Hamoed."""
-        month = hebrew_date.month
+        month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
         # Chol Hamoed Sukkot (Tishrei 16-20)
-        if month == 1 and 16 <= day <= 20:
+        if month_name == 'Tishrei' and 16 <= day <= 20:
             return True
         # Chol Hamoed Pesach (Nisan 16-20)
-        elif month == 7 and 16 <= day <= 20:
+        elif month_name == 'Nisan' and 16 <= day <= 20:
             return True
         
         return False
     
     def _is_fast_day_hebrew(self, hebrew_date) -> bool:
         """Check if Hebrew date is a fast day."""
-        month = hebrew_date.month
+        month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
         # Major fast days
         fast_days = [
-            (4, 10),   # 10 Tevet
-            (11, 9),   # 9 Av
-            (11, 17),  # 17 Tammuz
-            (12, 3),   # 3 Tishrei (Tzom Gedaliah)
+            ('Tevet', 10),   # 10 Tevet
+            ('Av', 9),       # 9 Av
+            ('Tammuz', 17),  # 17 Tammuz
+            ('Tishrei', 3),  # 3 Tishrei (Tzom Gedaliah)
         ]
         
-        return (month, day) in fast_days
+        return (month_name, day) in fast_days
     
     def _is_aseret_yemei_teshuvah(self, hebrew_date) -> bool:
         """
         Check if Hebrew date is during Aseret Yemei Teshuvah (Ten Days of Repentance).
         This is the period from Rosh Hashana (1-2 Tishrei) through Yom Kippur (10 Tishrei).
         """
-        month = hebrew_date.month
+        month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
-        # Aseret Yemei Teshuvah is only in Tishrei (month 1)
-        if month != 1:
+        # Aseret Yemei Teshuvah is only in Tishrei
+        if month_name != 'Tishrei':
             return False
         
         # From 1 Tishrei (Rosh Hashana) through 10 Tishrei (Yom Kippur)
@@ -253,11 +261,11 @@ class HebrewCalendar:
         Determine if we should say Mashiv HaRuach (outside Israel).
         From Maariv of Shemini Atzeret (22 Tishrei) until Shacharit of first day of Pesach (15 Nisan).
         """
-        month = hebrew_date.month
+        month_name = hebrew_date.month_name()
         day = hebrew_date.day
         
         # From 22 Tishrei (Shemini Atzeret) through end of year
-        if month == 1 and day >= 22:  # Tishrei 22 onwards
+        if month_name == 'Tishrei' and day >= 22:  # Tishrei 22 onwards
             # For Maariv on Shemini Atzeret (22 Tishrei), start saying Mashiv HaRuach
             if day == 22 and tefilla_type == 'maariv':
                 return True
@@ -265,12 +273,12 @@ class HebrewCalendar:
             elif day > 22:
                 return True
         
-        # All of winter months: Cheshvan (2), Kislev (3), Tevet (4), Shevat (5), Adar (6)
-        if month in [2, 3, 4, 5, 6]:
+        # All of winter months: Cheshvan, Kislev, Tevet, Shevat, Adar
+        if month_name in ['Cheshvan', 'Kislev', 'Tevet', 'Shevat', 'Adar', 'Adar 2']:
             return True
         
         # On 15 Nisan (first day of Pesach)
-        if month == 7 and day == 15:
+        if month_name == 'Nisan' and day == 15:
             # Stop saying Mashiv HaRuach from Shacharit of Pesach onwards
             if tefilla_type in ['shacharis', 'mincha']:
                 return False
@@ -279,7 +287,7 @@ class HebrewCalendar:
                 return True
         
         # Until 14 Nisan (day before Pesach)
-        if month == 7 and day <= 14:  # Nisan 1-14
+        if month_name == 'Nisan' and day <= 14:  # Nisan 1-14
             return True
         
         return False
@@ -338,6 +346,31 @@ class HebrewCalendar:
         
         # Default: no Hallel
         return "none"
+    
+    def _calculate_full_shmoneh_esreh(self, day_of_week: str, holiday: Optional[str]) -> bool:
+        """
+        Calculate if we need full Shmone Esre (weekday middle brochos).
+        
+        Returns True for weekdays that are NOT major holidays.
+        Major holidays that need different middle brochos:
+        - pesach, shavuot, sukkot, rosh_hashana, yom_kippur, shmini_atzeret
+        
+        Minor holidays that still need full Shmone Esre:
+        - chanukkah, purim, rosh_chodesh, chol_hamoed, fast_days
+        """
+        # Only weekdays can have full Shmone Esre
+        if day_of_week != 'weekday':
+            return False
+        
+        # Major holidays that need different middle brochos
+        major_holidays = ['pesach', 'shavuot', 'sukkot', 'rosh_hashana', 'yom_kippur', 'shmini_atzeret']
+        
+        # If it's a major holiday, don't use full Shmone Esre
+        if holiday in major_holidays:
+            return False
+        
+        # All other weekdays (including minor holidays like Chanukkah, Purim) use full Shmone Esre
+        return True
 
 
 class TefillaRuleEngine:
@@ -414,6 +447,8 @@ class TefillaRuleEngine:
             else:
                 # Handle single hallel type
                 return date_conditions.hallel_type == condition_value
+        elif condition_key == 'full_shmoneh_esreh':
+            return date_conditions.full_shmoneh_esreh == condition_value
         elif condition_key == 'always':
             return condition_value  # Always include if condition_value is True
         
@@ -447,6 +482,8 @@ class TefillaRuleEngine:
             conditions_str += "_veten_tal_umattar"
         if date_conditions.hallel_type != "none":
             conditions_str += f"_hallel_{date_conditions.hallel_type}"
+        if date_conditions.full_shmoneh_esreh:
+            conditions_str += "_full_shmoneh_esreh"
         
         chunks_str = "_".join(chunk_list)
         hash_input = f"{conditions_str}_{chunks_str}"

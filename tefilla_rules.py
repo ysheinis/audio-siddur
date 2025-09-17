@@ -158,11 +158,14 @@ class HebrewCalendar:
         """
         Check if Hebrew date is Rosh Chodesh.
         Rosh Chodesh occurs on:
-        - 1st day of every month (always)
+        - 1st day of every month (except Tishrei 1st which is Rosh Hashana)
         - 30th day of months that have 30 days (also Rosh Chodesh for next month)
         """
-        # Always Rosh Chodesh on the 1st of any month
+        # Always Rosh Chodesh on the 1st of any month, EXCEPT Tishrei 1st (Rosh Hashana)
         if hebrew_date.day == 1:
+            # Tishrei 1st is Rosh Hashana, not Rosh Chodesh
+            if hebrew_date.month_name() == 'Tishrei':
+                return False
             return True
         
         # Check if this month has 30 days, and if so, the 30th is also Rosh Chodesh
@@ -290,43 +293,28 @@ class HebrewCalendar:
         End: until Pesach.
         """
         
-        year = gregorian_date.year
-        
-        # For dates before December, we're in the period that started in the previous December
-        # For dates in December, we're starting a new period
-        if gregorian_date.month < 12:
-            year -= 1
-        
-        # Check if the upcoming year (when we'll be saying the prayer) is a leap year
-        upcoming_year = year + 1
-        is_leap_year = (upcoming_year % 4 == 0 and upcoming_year % 100 != 0) or (upcoming_year % 400 == 0)
-        
+        # Work with gregorian_date.year
+        current_year = gregorian_date.year
+
         # Set start date: December 4 for regular years, December 5 for leap years
+        upcoming_year = current_year + 1
+        is_leap_year = (upcoming_year % 4 == 0 and upcoming_year % 100 != 0) or (upcoming_year % 400 == 0)
         start_day = 5 if is_leap_year else 4
-        veten_tal_start = date(year, 12, start_day)
+        veten_tal_start = date(current_year, 12, start_day)
         
-        # Get Pesach date for the upcoming Hebrew year
-        # If we're in December, we're looking for Pesach of the next Hebrew year
-        hebrew_date = dates.HebrewDate.from_pydate(gregorian_date)
-        hebrew_year = hebrew_date.year
-        
-        # If we're in December, we need Pesach of the next Hebrew year
-        if gregorian_date.month == 12:
-            hebrew_year += 1
-        
-        # Pesach is always 15 Nissan (Nissan is month 1)
-        pesach_hebrew = dates.HebrewDate(hebrew_year, 1, 15)  # 15 Nissan
+        # Calculate pesach_gregorian as Pesach that falls into this Gregorian year
+        gregorian_start = date(current_year, 1, 1)
+        hebrew_start = dates.HebrewDate.from_pydate(gregorian_start)
+        pesach_hebrew = dates.HebrewDate(hebrew_start.year, 1, 15)  # 15 Nissan
         pesach_gregorian = pesach_hebrew.to_pydate()
         
-        # VeTen Tal UMattar period: from December 4/5 until Pesach
-        # On the start date, start saying at Maariv
-        if tefilla_type == 'maariv' and gregorian_date == veten_tal_start:
-            return True
-        # On the end day, only say at Shacharit
-        if tefilla_type == 'shacharis' and gregorian_date == pesach_gregorian:
+        if gregorian_date == veten_tal_start:
+            return tefilla_type == 'maariv'
+        
+        if gregorian_date <= pesach_gregorian or gregorian_date > veten_tal_start:
             return True
         
-        return veten_tal_start < gregorian_date < pesach_gregorian
+        return False
     
     def _calculate_hallel_type(self, hebrew_date, holiday: Optional[str], rosh_chodesh: bool) -> str:
         """Calculate the type of Hallel to be recited.
@@ -337,7 +325,7 @@ class HebrewCalendar:
             "none": No Hallel (regular weekdays, most of Omer period)
         """
         # Full Hallel on major holidays (except Pesach which has special rules)
-        if holiday in ['shavuot', 'sukkot', 'chanukkah', 'rosh_hashana', 'yom_kippur', 'shmini_atzeret']:
+        if holiday in ['shavuot', 'sukkot', 'chanukkah', 'shmini_atzeret']:
             return "full"
         
         # Pesach: Full Hallel for first 2 days, partial for remaining days

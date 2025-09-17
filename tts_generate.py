@@ -49,6 +49,39 @@ def build_tefilla_for_date(tefilla_type: str, target_date: date = None, force_re
     """Build a specific tefilla for a given date."""
     return tefilla_builder.build_tefilla(tefilla_type, target_date, force_rebuild)
 
+def build_tefillos_for_date_range(start_date: date, end_date: date, tefilla_types: list, force_rebuild: bool = False):
+    """Build tefillos for a range of dates and tefilla types."""
+    from datetime import timedelta
+    
+    print(f"📅 Building tefillos from {start_date} to {end_date}")
+    print(f"🕌 Tefilla types: {', '.join(tefilla_types)}")
+    print("=" * 60)
+    
+    current_date = start_date
+    total_tefillos = 0
+    successful_tefillos = 0
+    
+    while current_date <= end_date:
+        print(f"\n🗓️  Processing date: {current_date}")
+        
+        for tefilla_type in tefilla_types:
+            total_tefillos += 1
+            try:
+                print(f"   🕌 Building {tefilla_type}...")
+                output_file = build_tefilla_for_date(tefilla_type, current_date, force_rebuild)
+                print(f"   ✅ {tefilla_type}: {output_file.name}")
+                successful_tefillos += 1
+            except Exception as e:
+                print(f"   ❌ {tefilla_type}: Error - {e}")
+        
+        current_date += timedelta(days=1)
+    
+    print(f"\n🎉 Build complete!")
+    print(f"📊 Successfully built {successful_tefillos}/{total_tefillos} tefillos")
+    
+    # Show final cache stats
+    tefilla_builder.show_cache_stats()
+
 def get_current_tefilla_type() -> str:
     """Determine the appropriate tefilla type for the current time."""
     current_hour = datetime.now().hour
@@ -107,6 +140,10 @@ def main():
                        help="Tefilla type to generate (default: current time appropriate)")
     parser.add_argument("--date", type=str, 
                        help="Date to generate for (YYYY-MM-DD, default: today)")
+    parser.add_argument("--date-range", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                       help="Date range to generate for (YYYY-MM-DD YYYY-MM-DD)")
+    parser.add_argument("--all-tefillos", action="store_true",
+                       help="Generate all tefilla types (shacharis, mincha, maariv) for each date")
     parser.add_argument("--force-rebuild", action="store_true",
                        help="Force rebuild even if cached version exists")
     parser.add_argument("--process-all", action="store_true",
@@ -152,9 +189,22 @@ def main():
         chunk_processor.chunk_cache.clear_cache()
         return
     
-    # Determine target date
+    # Determine target date(s)
     target_date = date.today()
-    if args.date:
+    start_date = None
+    end_date = None
+    
+    if args.date_range:
+        try:
+            start_date = datetime.strptime(args.date_range[0], "%Y-%m-%d").date()
+            end_date = datetime.strptime(args.date_range[1], "%Y-%m-%d").date()
+            if start_date > end_date:
+                print(f"❌ Start date must be before or equal to end date")
+                return
+        except ValueError as e:
+            print(f"❌ Invalid date format in range: {e}. Use YYYY-MM-DD")
+            return
+    elif args.date:
         try:
             target_date = datetime.strptime(args.date, "%Y-%m-%d").date()
         except ValueError:
@@ -175,27 +225,42 @@ def main():
             tefilla_builder.show_cache_stats()
         return
 
-    # Determine tefilla type
-    tefilla_type = args.tefilla or get_current_tefilla_type()
-    
-    print(f"📅 Target date: {target_date}")
-    print(f"🕌 Tefilla type: {tefilla_type}")
+    # Determine tefilla type(s)
+    if args.all_tefillos:
+        tefilla_types = ["shacharis", "mincha", "maariv"]
+    elif args.tefilla:
+        tefilla_types = [args.tefilla]
+    elif start_date and end_date:
+        # For date ranges, default to all tefillos
+        tefilla_types = ["shacharis", "mincha", "maariv"]
+    else:
+        # For single dates, default to current time appropriate tefilla
+        tefilla_type = get_current_tefilla_type()
+        tefilla_types = [tefilla_type]
     
     # Ensure all chunks are processed
     ensure_all_chunks_processed()
     
-    # Build the requested tefilla
-    try:
-        output_file = build_tefilla_for_date(tefilla_type, target_date, args.force_rebuild)
-        print(f"\n🎉 Tefilla generated successfully!")
-        print(f"📁 Output file: {output_file}")
+    # Build tefillos
+    if start_date and end_date:
+        # Build for date range
+        build_tefillos_for_date_range(start_date, end_date, tefilla_types, args.force_rebuild)
+    else:
+        # Build for single date
+        print(f"📅 Target date: {target_date}")
+        print(f"🕌 Tefilla type: {tefilla_types[0]}")
         
-        # Show cache stats
-        tefilla_builder.show_cache_stats()
-        
-    except Exception as e:
-        print(f"❌ Error generating tefilla: {e}")
-        return
+        try:
+            output_file = build_tefilla_for_date(tefilla_types[0], target_date, args.force_rebuild)
+            print(f"\n🎉 Tefilla generated successfully!")
+            print(f"📁 Output file: {output_file}")
+            
+            # Show cache stats
+            tefilla_builder.show_cache_stats()
+            
+        except Exception as e:
+            print(f"❌ Error generating tefilla: {e}")
+            return
 
 if __name__ == "__main__":
     main()

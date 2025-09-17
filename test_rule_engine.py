@@ -309,19 +309,46 @@ class TestHebrewCalendar(unittest.TestCase):
         # VeTen Tal UMattar 2025-2026: Dec 4 Maariv, 2025 to Apr 2, 2026 (Pesach)
         self.assert_condition(lambda conditions: conditions.veten_tal_umattar, 
                                     date(2025, 12, 5), date(2026, 4, 2), 
-                                    end_date_false_tefillos=['mincha', 'maariv'])
+                                    end_date_false_tefillos=['shacharit'])
         
         # VeTen Tal UMattar 2026-2027: Dec 4 Maariv, 2026 to Apr 22, 2027 (Pesach)
         self.assert_condition(lambda conditions: conditions.veten_tal_umattar, 
                                     date(2026, 12, 5), date(2027, 4, 22), 
-                                    end_date_false_tefillos=['mincha', 'maariv'])
+                                    end_date_false_tefillos=['shacharit'])
         
         # VeTen Tal UMattar 2027-2028: Dec 5 Maariv, 2027 to Apr 11, 2028 (Pesach)
         # Note: Dec 5 because 2028 is a leap year
         self.assert_condition(lambda conditions: conditions.veten_tal_umattar, 
                                     date(2027, 12, 6), date(2028, 4, 11), 
-                                    end_date_false_tefillos=['mincha', 'maariv'])    
+                                    end_date_false_tefillos=['shacharit'])    
     
+    def test_veten_tal_umattar_2026_comprehensive(self):
+        """Comprehensive test for veten_tal_umattar logic for entire year 2026."""
+        # 2026: Pesach is April 2, 2026
+        # Expected: True from Dec 5, 2025 to April 2, 2026 (shacharis only on April 2)
+        # Expected: False from April 3, 2026 to Dec 4, 2026
+        # Expected: True from Dec 5, 2026 onwards
+        
+        pesach_2026 = date(2026, 4, 2)
+        start = date(2026, 12, 4)
+        
+        # Single loop through all dates in 2026
+        current_date = date(2026, 1, 1)
+        while current_date <= date(2026, 12, 31):
+            for tefilla_type in ['shacharis', 'mincha', 'maariv']:
+                conditions = self.calendar.get_date_conditions(current_date, tefilla_type)
+                
+                # Calculate expected result based on ranges
+                if current_date == start:
+                    expected = (tefilla_type =='maariv')
+                elif pesach_2026 < current_date < start:
+                    expected = False
+                else:
+                    expected = True
+                
+                self.assertEqual(conditions.veten_tal_umattar, expected,
+                               f"Failed for {current_date} {tefilla_type}: expected {expected}, got {conditions.veten_tal_umattar}")
+            current_date += timedelta(days=1)
 
 
 if __name__ == '__main__':

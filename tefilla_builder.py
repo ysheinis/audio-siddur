@@ -4,10 +4,11 @@ Builds complete prayer services using the rule engine and caches results.
 """
 
 import json
-from dataclasses import dataclass
-from datetime import date
+import hashlib
+from dataclasses import dataclass, asdict
+from datetime import date, datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydub import AudioSegment
 
 from tefilla_rules import TefillaRuleEngine, load_chunk_annotations, ChunkAnnotation
@@ -21,6 +22,10 @@ class TefillaCache:
     date_conditions_hash: str
     chunk_list: List[str]
     output_file: Path
+    original_date: str
+    original_tefilla_type: str
+    conditions: dict
+    creation_timestamp: str
 
 
 class TefillaBuilder:
@@ -36,7 +41,7 @@ class TefillaBuilder:
         self.rule_engine = TefillaRuleEngine(chunk_annotations)
         
         # Cache for built tefillos
-        self.tefilla_cache_file = self.output_dir / "tefilla_cache.json"
+        self.tefilla_cache_file = self.output_dir / "directory.json"
         self.tefilla_cache = self._load_tefilla_cache()
     
     def _load_tefilla_cache(self) -> dict:
@@ -54,23 +59,112 @@ class TefillaBuilder:
         with open(self.tefilla_cache_file, 'w', encoding='utf-8') as f:
             json.dump(self.tefilla_cache, f, indent=2, ensure_ascii=False)
     
+    def _generate_conditions_checksum(self, conditions: Dict[str, Any]) -> str:
+        """Generate a checksum based on conditions to identify identical tefillos."""
+        # Filter out conditions that don't affect tefilla building
+        tefilla_relevant_conditions = {k: v for k, v in conditions.items() 
+                                     if k not in ['fast_day', 'sefirat_haomer']}
+        
+        # Create a sorted string representation of conditions for consistent hashing
+        conditions_str = json.dumps(tefilla_relevant_conditions, sort_keys=True, default=str)
+        return hashlib.md5(conditions_str.encode()).hexdigest()[:8]
+    
+    def _generate_meaningful_filename(self, tefilla_type: str, conditions: Dict[str, Any]) -> str:
+        """Generate a meaningful filename based on tefilla type and conditions."""
+        parts = [tefilla_type]
+        
+        # Add day of week
+        if conditions.get('day_of_week') == 'shabbat':
+            parts.append('shabbat')
+        else:
+            parts.append('weekday')
+        
+        # Add holiday information
+        if conditions.get('holiday'):
+            holiday = conditions['holiday']
+            if holiday == 'rosh_hashana':
+                parts.append('rosh_hashana')
+            elif holiday == 'yom_kippur':
+                parts.append('yom_kippur')
+            elif holiday == 'sukkot':
+                parts.append('sukkot')
+            elif holiday == 'shmini_atzeret':
+                parts.append('shmini_atzeret')
+            elif holiday == 'pesach':
+                parts.append('pesach')
+            elif holiday == 'shavuot':
+                parts.append('shavuot')
+            elif holiday == 'chanukkah':
+                parts.append('chanukkah')
+            elif holiday == 'purim':
+                parts.append('purim')
+        
+        # Add special conditions (excluding fast_day and sefirat_haomer)
+        if conditions.get('rosh_chodesh'):
+            parts.append('rosh_chodesh')
+        
+        if conditions.get('chol_hamoed'):
+            parts.append('chol_hamoed')
+        
+        if conditions.get('aseret_yemei_teshuvah'):
+            parts.append('aseret_yemei_teshuvah')
+        
+        # Add Hallel type
+        hallel_type = conditions.get('hallel_type', 'none')
+        if hallel_type != 'none':
+            parts.append(f'hallel_{hallel_type}')
+        
+        # Add seasonal variations
+        if conditions.get('mashiv_haruach'):
+            parts.append('mashiv_haruach')
+        
+        if conditions.get('veten_tal_umattar'):
+            parts.append('veten_tal_umattar')
+        
+        # Join parts and clean up
+        filename = ' '.join(parts)
+        # Replace spaces with underscores and remove special characters
+        filename = filename.replace(' ', '_').replace('-', '_')
+        
+        return filename
+    
     def build_tefilla(self, tefilla_type: str, target_date: date = None, force_rebuild: bool = False) -> Path:
         """Build a complete tefilla for the given date and type."""
         if target_date is None:
             target_date = date.today()
         
-        # Generate hash for this tefilla configuration
-        tefilla_hash = self.rule_engine.get_tefilla_hash(tefilla_type, target_date)
-        output_file = self.output_dir / f"{tefilla_type}_{tefilla_hash}.mp3"
+        # Get conditions for this date and tefilla type
+        conditions = self.rule_engine.hebrew_calendar.get_date_conditions(target_date, tefilla_type)
+        conditions_dict = asdict(conditions)
         
-        # Check if tefilla is already cached
+        # Filter out conditions that don't affect tefilla building for storage
+        tefilla_relevant_conditions = {k: v for k, v in conditions_dict.items() 
+                                     if k not in ['fast_day', 'sefirat_haomer']}
+        
+        # Generate checksum based on conditions
+        conditions_checksum = self._generate_conditions_checksum(conditions_dict)
+        
+        # Generate meaningful filename
+        meaningful_name = self._generate_meaningful_filename(tefilla_type, conditions_dict)
+        output_file = self.output_dir / f"{meaningful_name}_{conditions_checksum}.mp3"
+        
+        # Check if tefilla with same conditions already exists
+        if not force_rebuild:
+            for cache_entry in self.tefilla_cache.values():
+                if (cache_entry.get('conditions_checksum') == conditions_checksum and 
+                    cache_entry.get('tefilla_type') == tefilla_type):
+                    existing_file = Path(cache_entry['output_file'])
+                    if existing_file.exists():
+                        print(f"⚡ Reusing existing tefilla: {existing_file.name} (same conditions)")
+                        return existing_file
+        
+        # Check if file already exists (direct file check)
         if not force_rebuild and output_file.exists():
-            cache_key = f"{tefilla_type}_{tefilla_hash}"
-            if cache_key in self.tefilla_cache:
-                print(f"⚡ Using cached tefilla: {output_file}")
-                return output_file
+            print(f"⚡ Using cached tefilla: {output_file.name}")
+            return output_file
         
         print(f"🔨 Building tefilla: {tefilla_type} for {target_date}")
+        print(f"   📋 Conditions: {conditions_dict}")
         
         # Get chunk list from rule engine
         chunk_list = self.rule_engine.build_tefilla(tefilla_type, target_date)
@@ -80,8 +174,10 @@ class TefillaBuilder:
         
         print(f"   📋 Selected chunks: {', '.join(chunk_list)}")
         
-        # Ensure all chunks are processed
+        # Ensure all chunks are processed (auto-process missing ones)
         chunk_paths = []
+        missing_chunks = []
+        
         for chunk_name in chunk_list:
             if chunk_name in self.chunk_processor.chunk_cache.load_directory():
                 # Chunk exists in cache, get its path
@@ -89,25 +185,45 @@ class TefillaBuilder:
                 if chunk_path.exists():
                     chunk_paths.append(chunk_path)
                 else:
-                    raise FileNotFoundError(f"Chunk file not found: {chunk_path}")
+                    missing_chunks.append(chunk_name)
             else:
-                raise ValueError(f"Chunk not found in cache: {chunk_name}")
+                missing_chunks.append(chunk_name)
+        
+        # Process any missing chunks
+        if missing_chunks:
+            print(f"   🔧 Processing {len(missing_chunks)} missing chunks...")
+            for chunk_name in missing_chunks:
+                # Get chunk text from tts_map
+                from tts_map import TEXT_MAP
+                if chunk_name in TEXT_MAP:
+                    chunk_text = TEXT_MAP[chunk_name]["text"]
+                    print(f"   🔹 Processing missing chunk: {chunk_name}")
+                    self.chunk_processor.process_chunk(chunk_name, chunk_text)
+                    # Get the newly created chunk path
+                    chunk_path = self.chunk_processor.chunk_cache.get_cached_path(chunk_name)
+                    chunk_paths.append(chunk_path)
+                else:
+                    raise ValueError(f"Chunk '{chunk_name}' not found in tts_map")
         
         # Combine chunks into complete tefilla
         self._combine_chunks(chunk_paths, output_file)
         
-        # Update cache
-        cache_key = f"{tefilla_type}_{tefilla_hash}"
+        # Update cache with enhanced metadata
+        cache_key = f"{meaningful_name}_{conditions_checksum}"
         self.tefilla_cache[cache_key] = {
             'tefilla_type': tefilla_type,
-            'date': target_date.isoformat(),
+            'original_date': target_date.isoformat(),
+            'original_tefilla_type': tefilla_type,
+            'conditions': tefilla_relevant_conditions,  # Use filtered conditions
+            'conditions_checksum': conditions_checksum,
             'chunk_list': chunk_list,
             'output_file': str(output_file),
-            'hash': tefilla_hash
+            'meaningful_name': meaningful_name,
+            'creation_timestamp': datetime.now().isoformat()
         }
         self._save_tefilla_cache()
         
-        print(f"✅ Tefilla built: {output_file}")
+        print(f"✅ Tefilla built: {output_file.name}")
         return output_file
     
     def _combine_chunks(self, chunk_paths: List[Path], output_path: Path):

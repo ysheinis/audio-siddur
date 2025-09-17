@@ -43,6 +43,23 @@ class TestTtsMapValidation(unittest.TestCase):
         
         return annotations
     
+    def test_no_duplicate_chunk_names(self):
+        """Test that there are no duplicate chunk names in tts_map."""
+        chunk_names = list(self.text_map.keys())
+        unique_chunk_names = set(chunk_names)
+        
+        # Check for duplicates
+        if len(chunk_names) != len(unique_chunk_names):
+            duplicates = []
+            seen = set()
+            for name in chunk_names:
+                if name in seen:
+                    duplicates.append(name)
+                else:
+                    seen.add(name)
+            
+            self.fail(f"Duplicate chunk names found: {duplicates}")
+    
     def test_all_condition_keys_supported(self):
         """Test that all condition keys in tts_map are supported by DateConditions."""
         # Get all unique condition keys from tts_map

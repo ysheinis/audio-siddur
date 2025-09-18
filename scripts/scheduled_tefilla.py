@@ -18,6 +18,7 @@ The script will:
 
 import sys
 import os
+import argparse
 from datetime import date, datetime
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def log_message(message: str):
 
 from tefilla_rules import HebrewCalendar
 from play_tefilla import play_audio_file, find_audio_player
-from tefilla_builder import TefillaBuilder
+import sys; sys.path.append("../src"); from tefilla_builder import TefillaBuilder
 from chunk_processor import ChunkProcessor
 from tts_generate import get_current_tefilla_type
 
@@ -71,9 +72,22 @@ def get_tefilla_type_for_time() -> str:
 def main():
     """Main function for scheduled tefilla playback."""
     try:
-        # Get today's date
-        today = date.today()
-        log_message(f"Script started for date: {today}")
+        # Parse command line arguments
+        parser = argparse.ArgumentParser(description='Scheduled Tefilla Player')
+        parser.add_argument('--date', type=str, help='Date to use (YYYY-MM-DD format). Default: today')
+        args = parser.parse_args()
+        
+        # Get date (today or specified)
+        if args.date:
+            try:
+                today = date.fromisoformat(args.date)
+                log_message(f"Script started for specified date: {today}")
+            except ValueError:
+                log_message(f"Invalid date format: {args.date}. Using today instead.")
+                today = date.today()
+        else:
+            today = date.today()
+            log_message(f"Script started for date: {today}")
         
         # Check if today is Shabbat or Yom Tov
         if not is_shabbat_or_yom_tov(today):

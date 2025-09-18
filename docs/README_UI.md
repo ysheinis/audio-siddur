@@ -4,9 +4,10 @@
 
 ### How to Start the Program
 
-1. **Double-click** on `start_siddur.bat` file
-2. The program will open with a simple window
-3. You'll see large buttons that are easy to click
+1. **Navigate to the UI folder**: `cd ui`
+2. **Double-click** on `start_siddur.bat` file
+3. The program will open with a simple window
+4. You'll see large buttons that are easy to click
 
 ### How to Use the Buttons
 
@@ -52,7 +53,7 @@
 - **Requirements**: Python 3.8+ with tkinter
 - **Audio**: Uses Windows Media Player or system default audio player
 - **Dependencies**: All required packages should be installed
-- **Launch**: Double-click `start_siddur.bat` or run `python siddur_ui.py`
+- **Launch**: Navigate to `ui/` folder, then double-click `start_siddur.bat` or run `python siddur_ui.py`
 
 ### Troubleshooting
 
@@ -65,12 +66,16 @@
 
 ```
 siddur/
-├── siddur_ui.py          # Main UI application
-├── start_siddur.bat      # Windows launcher
-├── tts_generate.py       # Core prayer generation
-├── tefilla_rules.py      # Prayer rules and calendar
-├── tts_map.py           # Prayer text and conditions
-├── chunk_processor.py   # Audio processing
-├── chunk_cache.py       # Audio caching
-└── output/              # Generated audio files
+├── ui/
+│   ├── siddur_ui.py          # Main UI application
+│   └── start_siddur.bat      # Windows launcher
+├── src/
+│   ├── tefilla_rules.py      # Prayer rules and calendar
+│   ├── tts_map.py           # Prayer text and conditions
+│   ├── chunk_processor.py   # Audio processing
+│   └── chunk_cache.py       # Audio caching
+├── scripts/
+│   └── tts_generate.py       # Core prayer generation
+└── data/
+    └── output/              # Generated audio files
 ```

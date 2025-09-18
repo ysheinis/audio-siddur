@@ -20,8 +20,8 @@ class ChunkProcessor:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_file
         
         # Set up directories
-        self.cache_dir = cache_dir or Path("chunk_cache")
-        self.temp_dir = temp_dir or Path("temp_sentences")
+        self.cache_dir = cache_dir or Path("data/chunk_cache")
+        self.temp_dir = temp_dir or Path("data/temp_sentences")
         self.directory_file = self.cache_dir / "directory.json"
         
         # Initialize chunk cache

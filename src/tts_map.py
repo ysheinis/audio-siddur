@@ -543,10 +543,7 @@ TEXT_MAP = {
  וְשַׂמְּחֵנוּ בִּישׁוּעָתֶֽךָ. וְטַהֵר לִבֵּֽנוּ לְעָבְדְּ֒ךָ בֶּאֱמֶת. וְהַנְחִילֵֽנוּ יְהֹוָה אֱלֹהֵֽינוּ בְּאַהֲבָה וּבְרָצוֹן שַׁבַּת קָדְשֶֽׁךָ. וְיָנֽוּחוּ בָהּ יִשְׂרָאֵל מְקַדְּ֒שֵׁי שְׁמֶֽךָ. בָּרוּךְ אַתָּה יְהֹוָה מְקַדֵּשׁ הַשַּׁבָּת: 
 """,
     "tefilla_types": ['maariv'],
-    "conditions": {
-        'day_of_week': 'shabbat',
-        'holiday': ['chanukkah', 'purim', None]
-    }
+    "conditions": {'day_of_week': 'shabbat', 'yom_tov': False}
 },
 "shmone esre shabos shacharis": {
     "text": """
@@ -558,10 +555,7 @@ TEXT_MAP = {
  שבְּעֵנוּ מִטּוּבֶךָ וְשמְּחֵנוּ בִּישׁוּעָתֶךָ וְטַהֵר לִבֵּנוּ לְעָבְדְּךָ בֶּאֱמֶת. וְהַנְחִילֵנוּ ה' אֱלהֵינוּ בְּאַהֲבָה וּבְרָצון שַׁבַּת קָדְשֶׁךָ. וְיָנוּחוּ בו יִשרָאֵל מְקַדְּשֵׁי שְׁמֶךָ: בָּרוּךְ אַתָּה ה' מְקַדֵּשׁ הַשַּׁבָּת:  
 """,
     "tefilla_types": ['shacharis'],
-    "conditions": {
-        'day_of_week': 'shabbat',
-        'holiday': ['chanukkah', 'purim', None]
-    }
+    "conditions": {'day_of_week': 'shabbat', 'yom_tov': False}
 },
 "shmone esre shabos mincha": {
     "text": """
@@ -575,10 +569,7 @@ TEXT_MAP = {
  וְטַהֵר לִבֵּנוּ לְעָבְדְּךָ בֶּאֱמֶת. וְהַנְחִילֵנוּ יְהֹוָה אֱלֹהֵינוּ בְּאַהֲבָה וּבְרָצוֹן שַׁבַּת קָדְשֶׁךָ וְיָנוּחוּ בָם יִשְׂרָאֵל מְקַדְּשֵׁי שְׁמֶךָ: בָּרוּךְ אַתָּה יְהֹוָה מְקַדֵּשׁ הַשַׁבָּת:
 """,
     "tefilla_types": ['mincha'],
-    "conditions": {
-        'day_of_week': 'shabbat',
-        'holiday': ['chanukkah', 'purim', None]
-    }
+    "conditions": {'day_of_week': 'shabbat', 'yom_tov': False}
 },
 
 

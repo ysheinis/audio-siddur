@@ -3,7 +3,7 @@
 import unittest
 import json
 from datetime import date
-from tefilla_rules import HebrewCalendar, TefillaRuleEngine, ChunkAnnotation, DateConditions
+import sys; sys.path.append("../src"); from tefilla_rules import HebrewCalendar, TefillaRuleEngine, ChunkAnnotation, DateConditions
 
 
 class TestTtsMapValidation(unittest.TestCase):
@@ -103,6 +103,7 @@ class TestTtsMapValidation(unittest.TestCase):
             'veten_tal_umattar': [True, False],
             'hallel_type': ['none', 'partial', 'full'],
             'full_shmoneh_esreh': [True, False],
+            'yom_tov': [True, False],
             'always': [True, False]
         }
         

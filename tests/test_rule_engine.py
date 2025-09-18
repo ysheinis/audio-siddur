@@ -5,7 +5,7 @@ Tests HebrewCalendar and TefillaRuleEngine functionality with boundary condition
 
 import unittest
 from datetime import date, datetime, timedelta
-from tefilla_rules import HebrewCalendar, TefillaRuleEngine, DateConditions, ChunkAnnotation
+import sys; sys.path.append("../src"); from tefilla_rules import HebrewCalendar, TefillaRuleEngine, DateConditions, ChunkAnnotation
 
 
 class TestHebrewCalendar(unittest.TestCase):
@@ -75,9 +75,9 @@ class TestHebrewCalendar(unittest.TestCase):
             start_date: First date of chol hamoed (inclusive)
             end_date: Last date of chol hamoed (inclusive)
         """
-        self.assert_condition(lambda conditions: conditions.chol_hamoed, 
-                             start_date, end_date)
-    
+        self.assert_condition(lambda conditions: conditions.chol_hamoed, start_date, end_date)
+        self.assert_condition(lambda conditions: not conditions.yom_tov, start_date, end_date)
+
     def assert_rosh_chodesh(self, start_date, end_date):
         """
         Test rosh_chodesh condition across a date range.
@@ -160,7 +160,7 @@ class TestHebrewCalendar(unittest.TestCase):
             self.assert_short_shmoneh_esreh(last_two_start, end_date)
         
         # Test hallel_type based on holiday rules
-        if holiday_name in ['rosh_hashana', 'yom_kippur', 'shavuot', 'chanukkah']:
+        if holiday_name in ['shavuot', 'chanukkah']:
             # Full Hallel for entire holiday period
             self.assert_condition(lambda conditions: conditions.hallel_type == "full", 
                                  start_date, end_date)

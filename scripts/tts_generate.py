@@ -8,17 +8,16 @@ import shutil
 import argparse
 from datetime import date, datetime
 from pathlib import Path
+import sys
+sys.path.append("../src")
 from chunk_processor import ChunkProcessor
 from tefilla_builder import TefillaBuilder
-
-# --- CONFIGURATION ---
-
 from tts_map import TEXT_MAP
 
 # --- SETUP ---
 
 # Initialize chunk processor (handles its own cache and TTS setup)
-chunk_processor = ChunkProcessor(credentials_file="innate-rite-449719-j9-e3536a2d6cb9.json")
+chunk_processor = ChunkProcessor(credentials_file="../config/google_api_key.json")
 
 # Initialize tefilla builder
 tefilla_builder = TefillaBuilder(chunk_processor)

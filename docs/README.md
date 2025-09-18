@@ -45,67 +45,86 @@ This system provides:
 
 ```
 siddur/
-├── 🎵 Core System
-│   ├── tefilla_rules.py          # Hebrew calendar & prayer rules
-│   ├── tts_map.py               # Prayer texts & conditions
-│   ├── chunk_processor.py       # TTS audio processing
-│   ├── tefilla_builder.py       # Complete tefilla assembly
-│   └── tts_generate.py          # Main generation script
+├── 📁 src/                    # Core Python source files
+│   ├── tefilla_rules.py       # Hebrew calendar & prayer rules
+│   ├── tts_map.py            # Prayer texts & conditions
+│   ├── chunk_processor.py    # TTS audio processing
+│   ├── tefilla_builder.py    # Complete tefilla assembly
+│   └── chunk_cache.py        # Cache management
 │
-├── 🖥️ User Interface
-│   ├── siddur_ui.py             # GUI application
-│   ├── start_siddur.bat         # Windows launcher
-│   └── README_UI.md             # User instructions
+├── 📁 scripts/               # Command-line tools
+│   ├── tts_generate.py       # Main generation script
+│   ├── play_tefilla.py       # Manual tefilla player
+│   └── scheduled_tefilla.py  # Automated scheduler
 │
-├── 🎮 Command Line Tools
-│   ├── play_tefilla.py          # Manual tefilla player
-│   ├── scheduled_tefilla.py     # Automated scheduler
-│   └── test_play.py             # Audio playback testing
+├── 📁 ui/                    # User interface
+│   ├── siddur_ui.py          # GUI application
+│   └── start_siddur.bat      # Windows launcher
 │
-├── 🧪 Testing & Validation
-│   ├── test_rule_engine.py      # Hebrew calendar tests
-│   ├── test_tts_map_validation.py # Prayer text validation
-│   └── test_tefilla_rule_engine.py # Rule engine tests
+├── 📁 tests/                 # Test files
+│   ├── test_rule_engine.py   # Hebrew calendar tests
+│   └── test_tts_map_validation.py # Prayer text validation
 │
-├── 📦 Data & Cache
-│   ├── chunk_cache/             # Individual prayer chunks
-│   │   └── directory.json       # Chunk metadata
-│   ├── output/                  # Complete tefillos
-│   │   └── directory.json       # Tefilla metadata
-│   └── innate-rite-*.json       # TTS service credentials
+├── 📁 deployment/            # Deployment scripts and docs
+│   ├── install_python.bat    # Installation script
+│   ├── test_installation.bat # Installation verification
+│   ├── setup_scheduler.bat   # Windows Scheduler setup
+│   ├── create_deployment_package.bat # Package creation
+│   ├── DEPLOYMENT_CHECKLIST.md # Deployment guide
+│   └── USER_MANUAL.md        # User manual
 │
-└── 📚 Documentation
-    ├── README.md                # This file
-    └── README_UI.md             # User interface guide
+├── 📁 config/                # Configuration files
+│   ├── google_api_key.json   # TTS credentials
+│   ├── requirements.txt      # Python dependencies
+│   └── requirements_ui.txt   # UI dependencies
+│
+├── 📁 data/                  # Generated content
+│   ├── chunk_cache/          # Individual prayer chunks
+│   │   └── directory.json    # Chunk metadata
+│   ├── output/               # Complete tefillos
+│   │   └── directory.json    # Tefilla metadata
+│   └── temp_sentences/       # Temporary files
+│
+├── 📁 docs/                  # Documentation
+│   ├── README.md             # This file
+│   └── README_UI.md          # User interface guide
+│
+└── 📁 logs/                  # Log files
+    └── scheduled_tefilla.log # Scheduler activity
 ```
 
 ## 🚀 Quick Start
 
 ### For End Users (Mom)
 
-1. **Double-click** `start_siddur.bat`
-2. **Click the green "NOW" button** to play the current prayer
-3. **Or click specific prayer buttons** (Shacharis, Mincha, Maariv)
+1. **Navigate to UI folder**: `cd ui`
+2. **Double-click** `start_siddur.bat`
+3. **Click the green "NOW" button** to play the current prayer
+4. **Or click specific prayer buttons** (Shacharis, Mincha, Maariv)
 
 ### For Developers
 
 1. **Install dependencies**:
    ```bash
+   cd config
    pip install -r requirements.txt
    ```
 
 2. **Run tests**:
    ```bash
+   cd tests
    python -m unittest test_rule_engine.py -v
    ```
 
 3. **Generate tefillos**:
    ```bash
+   cd scripts
    python tts_generate.py --date 2025-09-23 --tefilla shacharis
    ```
 
 4. **Play specific tefilla**:
    ```bash
+   cd scripts
    python play_tefilla.py --date 2025-09-23 --tefilla maariv
    ```
 
@@ -143,6 +162,8 @@ siddur/
 
 #### Generate Tefillos
 ```bash
+cd scripts
+
 # Single tefilla
 python tts_generate.py --date 2025-09-23 --tefilla shacharis
 
@@ -155,6 +176,8 @@ python tts_generate.py --date 2025-09-23 --tefilla maariv --force
 
 #### Play Tefillos
 ```bash
+cd scripts
+
 # Current tefilla
 python play_tefilla.py
 
@@ -170,11 +193,13 @@ python play_tefilla.py --player "C:\Program Files\VLC\vlc.exe"
 
 #### Automated Scheduling
 ```bash
+cd scripts
+
 # Test the scheduler
 python scheduled_tefilla.py
 
 # Check logs
-type scheduled_tefilla.log
+type ../logs/scheduled_tefilla.log
 ```
 
 ### Windows Task Scheduler Setup
@@ -186,7 +211,7 @@ type scheduled_tefilla.log
 
 2. **Task configuration**:
    - **Program**: `python`
-   - **Arguments**: `C:\Retalon\src\siddur\scheduled_tefilla.py`
+   - **Arguments**: `C:\Retalon\src\siddur\scripts\scheduled_tefilla.py`
    - **Start in**: `C:\Retalon\src\siddur`
 
 3. **The script will**:
@@ -199,21 +224,20 @@ type scheduled_tefilla.log
 
 ### Run All Tests
 ```bash
+cd tests
 python -m unittest test_rule_engine.py -v
 python -m unittest test_tts_map_validation.py -v
-python -m unittest test_tefilla_rule_engine.py -v
 ```
 
 ### Test Specific Components
 ```bash
+cd tests
+
 # Test Hebrew calendar logic
 python -m unittest test_rule_engine.TestHebrewCalendar.test_major_holidays_2025 -v
 
-# Test audio playback
-python test_play.py
-
 # Validate prayer text mapping
-python -m unittest test_tts_map_validation.TestTefillaRuleEngine.test_all_condition_values_supported -v
+python -m unittest test_tts_map_validation.TestTtsMapValidation.test_all_condition_values_supported -v
 ```
 
 ## 📊 System Capabilities
@@ -254,7 +278,7 @@ python -m unittest test_tts_map_validation.TestTefillaRuleEngine.test_all_condit
 #### Tefilla Not Building
 - Check TTS credentials in `innate-rite-*.json`
 - Verify internet connection for TTS API
-- Check `chunk_cache/directory.json` for processing status
+- Check `data/chunk_cache/directory.json` for processing status
 
 #### Calendar Issues
 - Run tests: `python -m unittest test_rule_engine.py -v`
@@ -267,26 +291,26 @@ python -m unittest test_tts_map_validation.TestTefillaRuleEngine.test_all_condit
 - Test manually: `python scheduled_tefilla.py`
 
 ### Log Files
-- **`scheduled_tefilla.log`** - Automated scheduler activity
-- **`chunk_cache/directory.json`** - Audio chunk metadata
-- **`output/directory.json`** - Complete tefilla metadata
+- **`logs/scheduled_tefilla.log`** - Automated scheduler activity
+- **`data/chunk_cache/directory.json`** - Audio chunk metadata
+- **`data/output/directory.json`** - Complete tefilla metadata
 
 ## 🛠️ Development
 
 ### Adding New Prayers
-1. **Add text to `tts_map.py`** with appropriate conditions
-2. **Update tests** in `test_tts_map_validation.py`
-3. **Test with** `python tts_generate.py --date [test_date] --tefilla [type]`
+1. **Add text to `src/tts_map.py`** with appropriate conditions
+2. **Update tests** in `tests/test_tts_map_validation.py`
+3. **Test with** `cd scripts && python tts_generate.py --date [test_date] --tefilla [type]`
 
 ### Modifying Calendar Logic
-1. **Update `tefilla_rules.py`** with new rules
-2. **Add tests** in `test_rule_engine.py`
+1. **Update `src/tefilla_rules.py`** with new rules
+2. **Add tests** in `tests/test_rule_engine.py`
 3. **Run comprehensive tests** to ensure accuracy
 
 ### Extending Audio Features
-1. **Modify `chunk_processor.py`** for new TTS options
-2. **Update `play_tefilla.py`** for new audio players
-3. **Test with** `python test_play.py`
+1. **Modify `src/chunk_processor.py`** for new TTS options
+2. **Update `scripts/play_tefilla.py`** for new audio players
+3. **Test with** `cd scripts && python play_tefilla.py`
 
 ## 📝 License & Credits
 

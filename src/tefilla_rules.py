@@ -47,6 +47,7 @@ class DateConditions:
     # Derived conditions for complex logic
     hallel_type: str = "none"  # "none", "partial", "full"
     full_shmoneh_esreh: bool = False  # True for weekdays that need full Shmone Esre (excludes major holidays)
+    yom_tov: bool = False  # True for full Yom Tov days (major holidays when not Chol Hamoed)
 
 
 class HebrewCalendar:
@@ -104,6 +105,9 @@ class HebrewCalendar:
         # Calculate full Shmone Esre flag
         full_shmoneh_esreh = self._calculate_full_shmoneh_esreh(day_of_week, holiday, chol_hamoed)
         
+        # Calculate yom_tov flag (full Yom Tov days, not Chol Hamoed)
+        yom_tov = self._calculate_yom_tov(holiday, chol_hamoed)
+        
         return DateConditions(
             day_of_week=day_of_week,
             holiday=holiday,
@@ -115,7 +119,8 @@ class HebrewCalendar:
             mashiv_haruach=mashiv_haruach,
             veten_tal_umattar=veten_tal_umattar,
             hallel_type=hallel_type,
-            full_shmoneh_esreh=full_shmoneh_esreh
+            full_shmoneh_esreh=full_shmoneh_esreh,
+            yom_tov=yom_tov
         )
     
     
@@ -371,6 +376,32 @@ class HebrewCalendar:
         # All other weekdays (including minor holidays like Chanukkah, Purim) use full Shmone Esre
         return True
 
+    def _calculate_yom_tov(self, holiday: Optional[str], chol_hamoed: bool) -> bool:
+        """
+        Calculate if this is a full Yom Tov day (not Chol Hamoed).
+        
+        Returns True for major holidays when NOT in Chol Hamoed:
+        - rosh_hashana, yom_kippur, pesach, shavuot, sukkot, shmini_atzeret
+        
+        Returns False for:
+        - Chol Hamoed days (even if holiday is pesach/sukkot)
+        - Minor holidays (chanukkah, purim, rosh_chodesh)
+        - Regular weekdays/Shabbat
+        """
+        # Major holidays that are full Yom Tov days
+        major_holidays = ['rosh_hashana', 'yom_kippur', 'pesach', 'shavuot', 'sukkot', 'shmini_atzeret']
+        
+        # Must be a major holiday
+        if holiday not in major_holidays:
+            return False
+        
+        # Must NOT be Chol Hamoed (Chol Hamoed is not full Yom Tov)
+        if chol_hamoed:
+            return False
+        
+        # It's a major holiday and not Chol Hamoed = full Yom Tov
+        return True
+
 
 class TefillaRuleEngine:
     """Rule engine for building prayer services based on conditions."""
@@ -448,6 +479,8 @@ class TefillaRuleEngine:
                 return date_conditions.hallel_type == condition_value
         elif condition_key == 'full_shmoneh_esreh':
             return date_conditions.full_shmoneh_esreh == condition_value
+        elif condition_key == 'yom_tov':
+            return date_conditions.yom_tov == condition_value
         elif condition_key == 'always':
             return condition_value  # Always include if condition_value is True
         

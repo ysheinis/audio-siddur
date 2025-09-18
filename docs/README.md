@@ -211,8 +211,8 @@ type ../logs/scheduled_tefilla.log
 
 2. **Task configuration**:
    - **Program**: `python`
-   - **Arguments**: `C:\Retalon\src\siddur\scripts\scheduled_tefilla.py`
-   - **Start in**: `C:\Retalon\src\siddur`
+   - **Arguments**: `scripts\scheduled_tefilla.py`
+   - **Start in**: `C:\HebrewSiddur` (or your installation directory)
 
 3. **The script will**:
    - Check if today is Shabbat or Yom Tov

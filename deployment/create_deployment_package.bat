@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 REM Check if we're in the right directory
-if not exist "tefilla_rules.py" (
+if not exist "src\tefilla_rules.py" (
     echo ❌ Error: This script must be run from the siddur directory
     echo Please navigate to the siddur folder and run this script again.
     pause
@@ -15,40 +15,57 @@ if not exist "tefilla_rules.py" (
 echo Creating deployment package...
 echo.
 
-REM Create deployment directory
-if exist "siddur_deployment" (
-    echo Removing old deployment directory...
-    rmdir /s /q "siddur_deployment"
-)
+REM Create deployment directory with timestamp to avoid conflicts
+set TIMESTAMP=%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%%time:~6,2%
+set TIMESTAMP=%TIMESTAMP: =0%
+set DEPLOY_DIR=siddur_deployment_%TIMESTAMP%
 
-echo Creating deployment directory...
-mkdir "siddur_deployment"
-cd "siddur_deployment"
+echo Creating deployment directory: %DEPLOY_DIR%...
+mkdir "%DEPLOY_DIR%"
+if %errorlevel% neq 0 (
+    echo ❌ Failed to create deployment directory
+    goto :error
+)
+cd "%DEPLOY_DIR%"
 
 echo.
-echo Copying Python files...
-copy "..\*.py" . >nul
+echo Copying source files...
+xcopy "..\src\*" "src\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy Python files
+    echo ❌ Failed to copy source files
     goto :error
 )
 
-echo Copying batch files...
-copy "..\*.bat" . >nul
+echo Copying scripts...
+xcopy "..\scripts\*" "scripts\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy batch files
+    echo ❌ Failed to copy scripts
+    goto :error
+)
+
+echo Copying UI files...
+xcopy "..\ui\*" "ui\" /E /I /Q >nul
+if %errorlevel% neq 0 (
+    echo ❌ Failed to copy UI files
+    goto :error
+)
+
+echo Copying deployment files...
+xcopy "..\deployment\*" "deployment\" /E /I /Q >nul
+if %errorlevel% neq 0 (
+    echo ❌ Failed to copy deployment files
     goto :error
 )
 
 echo Copying documentation...
-copy "..\*.md" . >nul
+xcopy "..\docs\*" "docs\" /E /I /Q >nul
 if %errorlevel% neq 0 (
     echo ❌ Failed to copy documentation
     goto :error
 )
 
 echo Copying configuration files...
-copy "..\*.json" . >nul
+xcopy "..\config\*" "config\" /E /I /Q >nul
 if %errorlevel% neq 0 (
     echo ❌ Failed to copy configuration files
     goto :error
@@ -99,19 +116,19 @@ echo.
 echo Verifying deployment package...
 echo.
 echo Files in deployment package:
-dir /b *.py | find /c /v "" > temp_count.txt
+dir /b /s *.py | find /c /v "" > temp_count.txt
 set /p PYTHON_COUNT=<temp_count.txt
 echo ✓ Python files: %PYTHON_COUNT%
 
-dir /b *.bat | find /c /v "" > temp_count.txt
+dir /b /s *.bat | find /c /v "" > temp_count.txt
 set /p BATCH_COUNT=<temp_count.txt
 echo ✓ Batch files: %BATCH_COUNT%
 
-dir /b *.md | find /c /v "" > temp_count.txt
+dir /b /s *.md | find /c /v "" > temp_count.txt
 set /p DOC_COUNT=<temp_count.txt
 echo ✓ Documentation files: %DOC_COUNT%
 
-if exist "google_api_key.json" (
+if exist "config\google_api_key.json" (
     echo ✓ Google API key file
 ) else (
     echo ❌ Google API key file missing!
@@ -135,7 +152,7 @@ del temp_count.txt >nul 2>&1
 echo.
 echo Creating deployment package zip file...
 cd ..
-powershell -Command "Compress-Archive -Path 'siddur_deployment\*' -DestinationPath 'siddur_deployment.zip' -Force" >nul 2>&1
+powershell -Command "Compress-Archive -Path '%DEPLOY_DIR%\*' -DestinationPath 'siddur_deployment.zip' -Force" >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ Failed to create zip file
     goto :error
@@ -165,8 +182,7 @@ echo 3. Run install_python.bat
 echo 4. Run test_installation.bat
 echo 5. Run setup_scheduler.bat as Administrator
 echo.
-echo Press any key to continue...
-pause >nul
+echo Deployment package creation completed successfully!
 exit /b 0
 
 :error
@@ -184,5 +200,4 @@ echo 2. Check that all required files exist
 echo 3. Make sure you have write permissions
 echo 4. Try running as Administrator
 echo.
-pause
 exit /b 1

@@ -6,27 +6,19 @@
 ```bash
 # Generate all chunks for the next year
 cd scripts
-python tts_generate.py --all-chunks
+python tts_generate.py --process-chunks
 
 # Build all tefillos for the next year (2025-2026)
 python tts_generate.py --date-range 2025-01-01 2026-12-31 --all-tefillos
 
 # Verify cache is complete
-python -c "
-import sys; sys.path.append('../src')
-from chunk_processor import ChunkProcessor
-from tefilla_builder import TefillaBuilder
-cp = ChunkProcessor()
-tb = TefillaBuilder(cp)
-print(f'Chunks: {len(cp.get_chunk_cache())}')
-print(f'Tefillos: {len(tb.get_tefilla_cache())}')
-"
+python tts_generate.py --cache-stats
 ```
 
 ### 1.2 **Test Everything Works**
 ```bash
 # Run all tests
-cd tests
+cd ../tests
 python -m unittest test_rule_engine.py -v
 python -m unittest test_tts_map_validation.py -v
 
@@ -36,14 +28,15 @@ python siddur_ui.py
 
 # Test command line tools
 cd ../scripts
-python play_tefilla.py --date 2025-09-23 --tefilla shacharis
+python play_tefilla.py --date 2025-09-21 --tefilla shacharis
+python scheduled_tefilla.py --date 2025-09-21
 python scheduled_tefilla.py --date 2025-09-23
 ```
 
 ### 1.3 **Create Deployment Package**
 ```bash
 # Run the automated deployment package script
-cd deployment
+cd ../deployment
 .\create_deployment_package.bat
 ```
 
@@ -182,7 +175,7 @@ cd deployment
 ## 🎯 **Quick Summary**
 
 ### **On Your Computer:**
-1. Generate audio content: `cd scripts && python tts_generate.py --all-chunks`
+1. Generate audio content: `cd scripts && python tts_generate.py --process-chunks`
 2. Build tefillos: `cd scripts && python tts_generate.py --date-range 2025-01-01 2026-12-31 --all-tefillos`
 3. Create package: `cd deployment && .\create_deployment_package.bat`
 

@@ -33,7 +33,7 @@ class TefillaBuilder:
     
     def __init__(self, chunk_processor: ChunkProcessor, output_dir: Path = None):
         self.chunk_processor = chunk_processor
-        self.output_dir = output_dir or Path("data/output")
+        self.output_dir = output_dir or Path("../data/output")
         self.output_dir.mkdir(exist_ok=True)
         
         # Load chunk annotations and create rule engine

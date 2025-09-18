@@ -12,6 +12,11 @@ from pathlib import Path
 from datetime import datetime, date
 import os
 
+# Add paths for imports
+project_root = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(project_root / "src"))
+sys.path.insert(0, str(project_root / "scripts"))
+
 # Import our existing modules
 from tts_generate import build_tefilla_for_date, get_current_tefilla_type, show_hebrew_calendar_info
 from tefilla_rules import HebrewCalendar

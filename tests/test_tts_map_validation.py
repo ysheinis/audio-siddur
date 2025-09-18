@@ -177,11 +177,11 @@ class TestTtsMapValidation(unittest.TestCase):
             (date(2024, 10, 3), "shacharis", {
                 "day_of_week": "weekday",
                 "holiday": "rosh_hashana",
-                "rosh_chodesh": True,  # Rosh Hashana is Tishrei 1, which is Rosh Chodesh
+                "rosh_chodesh": False,  # Rosh Hashana does not use Rosh Chodesh tefillos
                 "chol_hamoed": False,
                 "aseret_yemei_teshuvah": True,
                 "full_shmoneh_esreh": False,
-                "hallel_type": "full"
+                "hallel_type": "none"
             }),
             
             # Chol Hamoed Pesach

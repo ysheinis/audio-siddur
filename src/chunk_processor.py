@@ -20,8 +20,8 @@ class ChunkProcessor:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_file
         
         # Set up directories
-        self.cache_dir = cache_dir or Path("data/chunk_cache")
-        self.temp_dir = temp_dir or Path("data/temp_sentences")
+        self.cache_dir = cache_dir or Path("../data/chunk_cache")
+        self.temp_dir = temp_dir or Path("../data/temp_sentences")
         self.directory_file = self.cache_dir / "directory.json"
         
         # Initialize chunk cache
@@ -41,8 +41,8 @@ class ChunkProcessor:
         )
         
         # Create directories
-        self.cache_dir.mkdir(exist_ok=True)
-        self.temp_dir.mkdir(exist_ok=True)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.temp_dir.mkdir(parents=True, exist_ok=True)
         
         # Hebrew text processing patterns
         self.HEBREW_LETTER = r'[\u05D0-\u05EA]'

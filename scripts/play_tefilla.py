@@ -20,7 +20,12 @@ from datetime import date, datetime
 from pathlib import Path
 
 # Import our modules
-import sys; sys.path.append("../src"); from tefilla_builder import TefillaBuilder
+# Add paths for imports
+project_root = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(project_root / "src"))
+sys.path.insert(0, str(project_root / "scripts"))
+
+from tefilla_builder import TefillaBuilder
 from chunk_processor import ChunkProcessor
 from tts_generate import get_current_tefilla_type
 

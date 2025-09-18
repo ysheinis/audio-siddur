@@ -45,4 +45,6 @@ Thumbs.db
 
 # Logs
 *.log
-/siddur_deployment/
+/siddur_deployment_*
+/deployment/siddur_deployment_*
+/siddur_deployment.zip

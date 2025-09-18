@@ -93,26 +93,26 @@ class SiddurUI:
         
         # Current date
         current_date = date.today().strftime("%A, %B %d, %Y")
-        date_label = tk.Label(
+        self.date_label = tk.Label(
             info_frame,
             text=f"📅 {current_date}",
             font=("Arial", 14),
             bg='#f0f0f0',
             fg='#34495e'
         )
-        date_label.pack()
+        self.date_label.pack()
         
         # Current time and suggested tefilla
         current_time = datetime.now().strftime("%I:%M %p")
         suggested_tefilla = get_current_tefilla_type().title()
-        time_label = tk.Label(
+        self.time_label = tk.Label(
             info_frame,
             text=f"🕐 {current_time} - Suggested: {suggested_tefilla}",
             font=("Arial", 12),
             bg='#f0f0f0',
             fg='#7f8c8d'
         )
-        time_label.pack()
+        self.time_label.pack()
     
     def create_now_button(self, parent):
         """Create the prominent 'Now' button."""
@@ -229,6 +229,19 @@ class SiddurUI:
         self.status_label.config(text=message, fg=color)
         self.root.update()
     
+    def update_date_time_display(self):
+        """Update the date and time display with current values."""
+        # Update date
+        current_date = date.today().strftime("%A, %B %d, %Y")
+        self.date_label.config(text=f"📅 {current_date}")
+        
+        # Update time and suggested tefilla
+        current_time = datetime.now().strftime("%I:%M %p")
+        suggested_tefilla = get_current_tefilla_type().title()
+        self.time_label.config(text=f"🕐 {current_time} - Suggested: {suggested_tefilla}")
+        
+        self.root.update()
+    
     def show_progress(self, show=True):
         """Show or hide the progress bar."""
         if show:
@@ -247,6 +260,9 @@ class SiddurUI:
     
     def play_current_tefilla(self):
         """Play the tefilla appropriate for current time."""
+        # Update the date and time display to show current values
+        self.update_date_time_display()
+        
         tefilla_type = get_current_tefilla_type()
         self.play_tefilla(tefilla_type)
     
@@ -255,6 +271,9 @@ class SiddurUI:
         if self.is_playing:
             messagebox.showwarning("Already Playing", "A prayer is already being played. Please stop it first.")
             return
+        
+        # Update the date and time display to show current values
+        self.update_date_time_display()
         
         # Run in a separate thread to avoid blocking the UI
         thread = threading.Thread(target=self._build_and_play_tefilla, args=(tefilla_type,))

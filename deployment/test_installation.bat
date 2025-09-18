@@ -9,46 +9,46 @@ echo.
 
 REM Test Python imports
 echo 1. Testing Python imports...
-python -c "import sys; print('✓ Python version:', sys.version)" 2>nul
+python -c "import sys; print('[OK] Python version:', sys.version)" 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ Python not working properly
+    echo [ERROR] Python not working properly
     goto :error
 )
 
-python -c "import pyluach; print('✓ pyluach (Hebrew calendar) imported successfully')" 2>nul
+python -c "import pyluach; print('[OK] pyluach (Hebrew calendar) imported successfully')" 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ pyluach not installed or not working
+    echo [ERROR] pyluach not installed or not working
     goto :error
 )
 
-python -c "import google.cloud.texttospeech; print('✓ Google Cloud TTS imported successfully')" 2>nul
+python -c "import google.cloud.texttospeech; print('[OK] Google Cloud TTS imported successfully')" 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ Google Cloud TTS not installed or not working
+    echo [ERROR] Google Cloud TTS not installed or not working
     goto :error
 )
 
 echo.
 echo 2. Testing Hebrew calendar functionality...
-python -c "from tefilla_rules import HebrewCalendar; cal = HebrewCalendar(); print('✓ Hebrew calendar working')" 2>nul
+python -c "import sys; sys.path.insert(0, '../src'); from tefilla_rules import HebrewCalendar; cal = HebrewCalendar(); print('[OK] Hebrew calendar working')" 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ Hebrew calendar not working
+    echo [ERROR] Hebrew calendar not working
     goto :error
 )
 
 echo.
 echo 3. Testing audio playback capability...
-python -c "from play_tefilla import find_audio_player; player = find_audio_player(); print('✓ Audio player found:', player)" 2>nul
+python -c "import sys; sys.path.insert(0, '../scripts'); from play_tefilla import find_audio_player; player = find_audio_player(); print('[OK] Audio player found:', player)" 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ Audio player not found
+    echo [ERROR] Audio player not found
     goto :error
 )
 
 echo.
 echo 4. Testing TTS API credentials...
 if exist "google_api_key.json" (
-    echo ✓ Google API key file found
+    echo [OK] Google API key file found
 ) else (
-    echo ❌ google_api_key.json file not found!
+    echo [ERROR] google_api_key.json file not found!
     echo Please make sure the Google API key file is in this directory.
     goto :error
 )
@@ -57,10 +57,10 @@ echo.
 echo 5. Testing scheduled tefilla script...
 python ../scripts/scheduled_tefilla.py --date 2025-01-15 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ Scheduled tefilla script not working
+    echo [ERROR] Scheduled tefilla script not working
     goto :error
 ) else (
-    echo ✓ Scheduled tefilla script working
+    echo [OK] Scheduled tefilla script working
 )
 
 echo.
@@ -69,14 +69,14 @@ echo Opening UI for 3 seconds to test...
 start /wait /min python ../ui/siddur_ui.py
 timeout /t 3 /nobreak >nul
 taskkill /f /im python.exe >nul 2>&1
-echo ✓ UI startup test completed
+echo [OK] UI startup test completed
 
 echo.
 echo ========================================
 echo Installation Test Complete!
 echo ========================================
 echo.
-echo ✓ All tests passed! The Hebrew Audio Siddur is ready to use.
+echo [OK] All tests passed! The Hebrew Audio Siddur is ready to use.
 echo.
 echo Next steps:
 echo 1. Run setup_scheduler.bat as Administrator to set up automatic playback
@@ -93,7 +93,7 @@ echo ========================================
 echo Installation Test Failed!
 echo ========================================
 echo.
-echo ❌ Some tests failed. Please check the error messages above.
+echo [ERROR] Some tests failed. Please check the error messages above.
 echo.
 echo Common solutions:
 echo 1. Run install_python.bat to install missing packages

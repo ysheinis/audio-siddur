@@ -8,11 +8,11 @@ REM Check if Python is already installed
 echo Checking Python installation...
 python --version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Python is already installed.
+    echo [OK] Python is already installed.
     python --version
     echo.
 ) else (
-    echo ❌ Python not found!
+    echo [ERROR] Python not found!
     echo.
     echo Please install Python 3.8 or higher from:
     echo https://www.python.org/downloads/
@@ -30,11 +30,11 @@ REM Check if pip is available
 echo Checking pip (Python package installer)...
 pip --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ pip not found! Please reinstall Python with pip included.
+    echo [ERROR] pip not found! Please reinstall Python with pip included.
     pause
     exit /b 1
 )
-echo ✓ pip is available.
+echo [OK] pip is available.
 echo.
 
 REM Install required packages
@@ -46,7 +46,7 @@ REM Install packages one by one with error checking
 echo Installing python-dateutil...
 pip install python-dateutil>=2.8.0
 if %errorlevel% neq 0 (
-    echo ❌ Failed to install python-dateutil
+    echo [ERROR] Failed to install python-dateutil
     pause
     exit /b 1
 )
@@ -54,7 +54,7 @@ if %errorlevel% neq 0 (
 echo Installing pyluach (Hebrew calendar)...
 pip install pyluach>=2.0.0
 if %errorlevel% neq 0 (
-    echo ❌ Failed to install pyluach
+    echo [ERROR] Failed to install pyluach
     pause
     exit /b 1
 )
@@ -62,7 +62,7 @@ if %errorlevel% neq 0 (
 echo Installing Google Cloud Text-to-Speech...
 pip install google-cloud-texttospeech>=2.0.0
 if %errorlevel% neq 0 (
-    echo ❌ Failed to install google-cloud-texttospeech
+    echo [ERROR] Failed to install google-cloud-texttospeech
     pause
     exit /b 1
 )
@@ -72,8 +72,8 @@ echo ========================================
 echo Installation Complete!
 echo ========================================
 echo.
-echo ✓ Python is installed and working
-echo ✓ All required packages are installed
+echo [OK] Python is installed and working
+echo [OK] All required packages are installed
 echo.
 echo Next steps:
 echo 1. Make sure google_api_key.json is in this folder

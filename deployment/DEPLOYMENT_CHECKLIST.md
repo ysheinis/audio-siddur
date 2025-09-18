@@ -36,8 +36,8 @@ python scheduled_tefilla.py --date 2025-09-23
 ### 1.3 **Create Deployment Package**
 ```bash
 # Run the automated deployment package script
-cd ../deployment
-.\create_deployment_package.bat
+cd ..
+deployment/create_deployment_package.bat
 ```
 
 **That's it!** The script automatically:

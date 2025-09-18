@@ -4,12 +4,20 @@ echo Hebrew Audio Siddur - Deployment Package
 echo ========================================
 echo.
 
-REM Check if we're in the right directory
-if not exist "src\tefilla_rules.py" (
-    echo ❌ Error: This script must be run from the siddur directory
-    echo Please navigate to the siddur folder and run this script again.
-    pause
-    exit /b 1
+REM Check if we're in the right directory and set source path
+if exist "src\tefilla_rules.py" (
+    REM We're in the siddur directory
+    set "SOURCE_PATH=.."
+) else (
+    if exist "..\src\tefilla_rules.py" (
+        REM We're in the deployment directory
+        set "SOURCE_PATH=..\.."
+    ) else (
+        echo [ERROR] Error: This script must be run from the siddur directory or deployment directory
+        echo Please navigate to the siddur folder and run this script again.
+        pause
+        exit /b 1
+    )
 )
 
 echo Creating deployment package...
@@ -23,57 +31,58 @@ set DEPLOY_DIR=siddur_deployment_%TIMESTAMP%
 echo Creating deployment directory: %DEPLOY_DIR%...
 mkdir "%DEPLOY_DIR%"
 if %errorlevel% neq 0 (
-    echo ❌ Failed to create deployment directory
+    echo [ERROR] Failed to create deployment directory
     goto :error
 )
 cd "%DEPLOY_DIR%"
 
 echo.
 echo Copying source files...
-xcopy "..\src\*" "src\" /E /I /Q >nul
+xcopy "%SOURCE_PATH%\src\*" "src\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy source files
+    echo [ERROR] Failed to copy source files
     goto :error
 )
 
 echo Copying scripts...
-xcopy "..\scripts\*" "scripts\" /E /I /Q >nul
+xcopy "%SOURCE_PATH%\scripts\*" "scripts\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy scripts
+    echo [ERROR] Failed to copy scripts
     goto :error
 )
 
 echo Copying UI files...
-xcopy "..\ui\*" "ui\" /E /I /Q >nul
+xcopy "%SOURCE_PATH%\ui\*" "ui\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy UI files
+    echo [ERROR] Failed to copy UI files
     goto :error
 )
 
 echo Copying deployment files...
-xcopy "..\deployment\*" "deployment\" /E /I /Q >nul
+xcopy "%SOURCE_PATH%\deployment\*.bat" "deployment\" /Q
+xcopy "%SOURCE_PATH%\deployment\*.md" "deployment\" /Q
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy deployment files
+    echo [ERROR] Failed to copy deployment files
     goto :error
 )
 
 echo Copying documentation...
-xcopy "..\docs\*" "docs\" /E /I /Q >nul
+xcopy "%SOURCE_PATH%\docs\*" "docs\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy documentation
+    echo [ERROR] Failed to copy documentation
     goto :error
 )
 
 echo Copying configuration files...
-xcopy "..\config\*" "config\" /E /I /Q >nul
+xcopy "%SOURCE_PATH%\config\*" "config\" /E /I /Q >nul
 if %errorlevel% neq 0 (
-    echo ❌ Failed to copy configuration files
+    echo [ERROR] Failed to copy configuration files
     goto :error
 )
 
 echo Copying requirements file...
-if exist "..\requirements.txt" (
-    copy "..\requirements.txt" . >nul
+if exist "%SOURCE_PATH%\requirements.txt" (
+    copy "%SOURCE_PATH%\requirements.txt" . >nul
 ) else (
     echo python-dateutil>=2.8.0 > requirements.txt
     echo pyluach>=2.0.0 >> requirements.txt
@@ -82,11 +91,11 @@ if exist "..\requirements.txt" (
 
 echo.
 echo Copying generated audio content...
-if exist "..\data\chunk_cache" (
+if exist "%SOURCE_PATH%\data\chunk_cache" (
     echo Copying chunk cache...
-    xcopy "..\data\chunk_cache" "data\chunk_cache\" /E /I /Q >nul
+    xcopy "%SOURCE_PATH%\data\chunk_cache" "data\chunk_cache\" /E /I /Q >nul
     if %errorlevel% neq 0 (
-        echo ❌ Failed to copy chunk cache
+        echo [ERROR] Failed to copy chunk cache
         goto :error
     )
 ) else (
@@ -94,11 +103,11 @@ if exist "..\data\chunk_cache" (
     echo You may need to generate audio chunks first.
 )
 
-if exist "..\data\output" (
+if exist "%SOURCE_PATH%\data\output" (
     echo Copying output directory...
-    xcopy "..\data\output" "data\output\" /E /I /Q >nul
+    xcopy "%SOURCE_PATH%\data\output" "data\output\" /E /I /Q >nul
     if %errorlevel% neq 0 (
-        echo ❌ Failed to copy output directory
+        echo [ERROR] Failed to copy output directory
         goto :error
     )
 ) else (
@@ -118,31 +127,31 @@ echo.
 echo Files in deployment package:
 dir /b /s *.py | find /c /v "" > temp_count.txt
 set /p PYTHON_COUNT=<temp_count.txt
-echo ✓ Python files: %PYTHON_COUNT%
+echo [OK] Python files: %PYTHON_COUNT%
 
 dir /b /s *.bat | find /c /v "" > temp_count.txt
 set /p BATCH_COUNT=<temp_count.txt
-echo ✓ Batch files: %BATCH_COUNT%
+echo [OK] Batch files: %BATCH_COUNT%
 
 dir /b /s *.md | find /c /v "" > temp_count.txt
 set /p DOC_COUNT=<temp_count.txt
-echo ✓ Documentation files: %DOC_COUNT%
+echo [OK] Documentation files: %DOC_COUNT%
 
 if exist "config\google_api_key.json" (
-    echo ✓ Google API key file
+    echo [OK] Google API key file
 ) else (
-    echo ❌ Google API key file missing!
+    echo [ERROR] Google API key file missing!
     goto :error
 )
 
 if exist "data\chunk_cache" (
-    echo ✓ Chunk cache directory
+    echo [OK] Chunk cache directory
 ) else (
     echo ⚠ Chunk cache directory missing
 )
 
 if exist "data\output" (
-    echo ✓ Output directory
+    echo [OK] Output directory
 ) else (
     echo ⚠ Output directory missing
 )
@@ -152,9 +161,18 @@ del temp_count.txt >nul 2>&1
 echo.
 echo Creating deployment package zip file...
 cd ..
-powershell -Command "Compress-Archive -Path '%DEPLOY_DIR%\*' -DestinationPath 'siddur_deployment.zip' -Force" >nul 2>&1
+
+REM Try using 7-Zip if available, otherwise fall back to PowerShell
+where 7z >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Using 7-Zip to create archive...
+    7z a -tzip "siddur_deployment.zip" "%DEPLOY_DIR%\*" >nul 2>&1
+) else (
+    echo Using PowerShell to create archive...
+    powershell -Command "Compress-Archive -Path '%DEPLOY_DIR%\*' -DestinationPath 'siddur_deployment.zip' -Force" >nul 2>&1
+)
 if %errorlevel% neq 0 (
-    echo ❌ Failed to create zip file
+    echo [ERROR] Failed to create zip file
     goto :error
 )
 
@@ -163,8 +181,8 @@ echo ========================================
 echo Deployment Package Created!
 echo ========================================
 echo.
-echo ✓ Deployment package created: siddur_deployment.zip
-echo ✓ Size: 
+echo [OK] Deployment package created: siddur_deployment.zip
+echo [OK] Size: 
 for %%A in (siddur_deployment.zip) do echo   %%~zA bytes
 echo.
 echo Package contents:
@@ -191,7 +209,7 @@ echo ========================================
 echo Deployment Package Creation Failed!
 echo ========================================
 echo.
-echo ❌ An error occurred while creating the deployment package.
+echo [ERROR] An error occurred while creating the deployment package.
 echo Please check the error messages above and try again.
 echo.
 echo Common issues:

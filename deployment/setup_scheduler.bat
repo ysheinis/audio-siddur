@@ -7,7 +7,7 @@ echo.
 REM Check if running as administrator
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ This script must be run as Administrator!
+    echo [ERROR] This script must be run as Administrator!
     echo.
     echo Right-click on this file and select "Run as administrator"
     echo.
@@ -15,7 +15,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo ✓ Running as Administrator
+echo [OK] Running as Administrator
 echo.
 
 REM Get current directory
@@ -32,27 +32,27 @@ REM Create Shacharis task (7:00 AM daily)
 echo Creating Shacharis task (7:00 AM daily)...
 schtasks /create /tn "Hebrew Siddur - Shacharis" /tr "%PYTHON_CMD%" /sc daily /st 07:00 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Shacharis task created successfully
+    echo [OK] Shacharis task created successfully
 ) else (
-    echo ❌ Failed to create Shacharis task
+    echo [ERROR] Failed to create Shacharis task
 )
 
 REM Create Mincha task (1:00 PM daily)  
 echo Creating Mincha task (1:00 PM daily)...
 schtasks /create /tn "Hebrew Siddur - Mincha" /tr "%PYTHON_CMD%" /sc daily /st 13:00 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Mincha task created successfully
+    echo [OK] Mincha task created successfully
 ) else (
-    echo ❌ Failed to create Mincha task
+    echo [ERROR] Failed to create Mincha task
 )
 
 REM Create Maariv task (7:00 PM daily)
 echo Creating Maariv task (7:00 PM daily)...
 schtasks /create /tn "Hebrew Siddur - Maariv" /tr "%PYTHON_CMD%" /sc daily /st 19:00 /f >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Maariv task created successfully
+    echo [OK] Maariv task created successfully
 ) else (
-    echo ❌ Failed to create Maariv task
+    echo [ERROR] Failed to create Maariv task
 )
 
 echo.
@@ -65,23 +65,23 @@ REM Verify tasks were created
 echo Verifying tasks were created...
 schtasks /query /tn "Hebrew Siddur - Shacharis" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Shacharis task verified
+    echo [OK] Shacharis task verified
 ) else (
-    echo ❌ Shacharis task not found
+    echo [ERROR] Shacharis task not found
 )
 
 schtasks /query /tn "Hebrew Siddur - Mincha" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Mincha task verified
+    echo [OK] Mincha task verified
 ) else (
-    echo ❌ Mincha task not found
+    echo [ERROR] Mincha task not found
 )
 
 schtasks /query /tn "Hebrew Siddur - Maariv" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ Maariv task verified
+    echo [OK] Maariv task verified
 ) else (
-    echo ❌ Maariv task not found
+    echo [ERROR] Maariv task not found
 )
 
 echo.

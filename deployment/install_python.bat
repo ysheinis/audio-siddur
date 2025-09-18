@@ -67,6 +67,14 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo Installing pydub (audio processing)...
+pip install pydub>=0.25.0
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install pydub
+    pause
+    exit /b 1
+)
+
 echo.
 echo ========================================
 echo Installation Complete!

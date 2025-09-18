@@ -27,6 +27,12 @@ if %errorlevel% neq 0 (
     goto :error
 )
 
+python -c "import pydub; print('[OK] pydub (audio processing) imported successfully')" 2>nul
+if %errorlevel% neq 0 (
+    echo [ERROR] pydub not installed or not working
+    goto :error
+)
+
 echo.
 echo 2. Testing Hebrew calendar functionality...
 python -c "import sys; sys.path.insert(0, '../src'); from tefilla_rules import HebrewCalendar; cal = HebrewCalendar(); print('[OK] Hebrew calendar working')" 2>nul
@@ -37,7 +43,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo 3. Testing audio playback capability...
-python -c "import sys; sys.path.insert(0, '../scripts'); from play_tefilla import find_audio_player; player = find_audio_player(); print('[OK] Audio player found:', player)" 2>nul
+python -c "import sys; sys.path.insert(0, '../scripts'); from play_tefilla import find_audio_player; player = find_audio_player(); print('[OK] Audio player found:', player if player != 'start' else 'system default')" 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] Audio player not found
     goto :error
